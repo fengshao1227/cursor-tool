@@ -156,11 +156,14 @@ export class DeepResetManager {
       details.push('⚠️ 备份失败，继续执行（风险操作）')
     }
 
-    // 2. 定位需要修改的文件
-    const mainJsPath = path.join(
-      this.cursorAppPath,
-      'Contents/Resources/app/out/vs/code/electron-main/main.js'
-    )
+    // 2. 定位需要修改的文件（尝试多个可能的路径）
+    const possibleMainJsPaths = [
+      path.join(this.cursorAppPath, 'Contents/Resources/app/out/main.js'), // 外部脚本使用的路径
+      path.join(this.cursorAppPath, 'Contents/Resources/app/out/vs/code/electron-main/main.js'), // 项目使用的路径
+    ]
+    
+    const mainJsPath = possibleMainJsPaths.find(p => fs.existsSync(p)) || possibleMainJsPaths[0]
+    
     const cliProcessPath = path.join(
       this.cursorAppPath,
       'Contents/Resources/app/out/vs/server/node/cliProcessMain.js'
@@ -182,15 +185,40 @@ export class DeepResetManager {
         try {
           // 读取文件
           let content = fs.readFileSync(file.path, 'utf-8')
-          const originalLength = content.length
+          const originalContent = content
+          let modified = false
+
+          // 🔥 关键修复：替换 ioreg 命令（获取系统UUID的命令）
+          // 这是外部脚本的核心功能：阻止Cursor从系统获取真实的硬件UUID
+          // 匹配各种可能的转义形式
+          const ioregPatterns = [
+            // 匹配: ioreg -rd1 -c IOPlatformExpertDevice (最常见形式)
+            /ioreg\s+-rd1\s+-c\s+IOPlatformExpertDevice/g,
+            // 匹配转义后的形式
+            /ioreg\\s\+-rd1\\s\+-c\\s\+IOPlatformExpertDevice/g,
+          ]
+          
+          const ioregReplacement = 'UUID=$(uuidgen | tr \'[:upper:]\' \'[:lower:]\');echo \\"IOPlatformUUID = \\"$UUID\\";'
+          
+          for (const pattern of ioregPatterns) {
+            if (pattern.test(content)) {
+              const beforeLength = content.length
+              content = content.replace(pattern, ioregReplacement)
+              // 验证是否真的替换了
+              if (content.length !== beforeLength || content.includes('UUID=$(uuidgen')) {
+                modified = true
+                details.push(`✅ 已替换 ioreg 命令（系统UUID获取）`)
+                break // 只替换一次
+              }
+            }
+          }
 
           // 替换可能的硬编码标识符
-          // 注意：这是启发式的，可能不完全准确
           content = content.replace(/machineId["']?\s*:\s*["'][^"']{32,}["']/g, `machineId:"${randomId1}"`)
           content = content.replace(/deviceId["']?\s*:\s*["'][^"']{32,}["']/g, `deviceId:"${randomId2}"`)
 
-          // 只有内容确实改变了才写入
-          if (content.length !== originalLength) {
+          // 如果内容改变了才写入
+          if (content !== originalContent) {
             fs.writeFileSync(file.path, content, 'utf-8')
             details.push(`✅ 已修改: ${file.name}`)
           } else {
@@ -262,10 +290,17 @@ export class DeepResetManager {
     const backupDir = path.join(this.backupBasePath, `cursor_backup_${timestamp}`)
     fs.mkdirSync(backupDir, { recursive: true })
 
-    // 2. 定位需要修改的文件（Windows路径）
+    // 2. 定位需要修改的文件（Windows路径，尝试多个可能的路径）
+    const possibleMainJsPaths = [
+      path.join(resourcesDir, 'out', 'main.js'), // 外部脚本使用的路径
+      path.join(resourcesDir, 'out', 'vs', 'code', 'electron-main', 'main.js'), // 项目使用的路径
+    ]
+    
+    const mainJsPath = possibleMainJsPaths.find(p => fs.existsSync(p)) || possibleMainJsPaths[0]
+    
     const filesToModify = [
       {
-        path: path.join(resourcesDir, 'out', 'vs', 'code', 'electron-main', 'main.js'),
+        path: mainJsPath,
         name: 'main.js',
       },
       {
@@ -296,7 +331,41 @@ export class DeepResetManager {
 
           // 读取文件
           let content = fs.readFileSync(file.path, 'utf-8')
+          const originalContent = content
           let modified = false
+
+          // 🔥 关键修复：替换 REG.exe 命令（获取Windows MachineGuid的命令）
+          // 这是外部脚本的核心功能：阻止Cursor从注册表获取真实的MachineGuid
+          // Python脚本使用的精确匹配: ${v5[s$()]}\\REG.exe QUERY HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography /v MachineGuid
+          // 注意：Python中 r'\\' 表示字面量双反斜杠，实际文件中可能是 \REG.exe 或 \\REG.exe
+          const regPatterns = [
+            // 精确匹配Python脚本的格式: ${v5[s$()]}\\REG.exe ... (双反斜杠，这是Python raw string的字面量)
+            // 在JavaScript文件中，这可能是转义后的形式
+            /\$\{v\d+\[s\$\(\)\]\}\\{1,2}REG\.exe\s+QUERY\s+HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography\s+\/v\s+MachineGuid/g,
+            // 匹配: ${v5[s$()]}\REG.exe ... (单反斜杠)
+            /\$\{v\d+\[s\$\(\)\]\}\\REG\.exe\s+QUERY\s+HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography\s+\/v\s+MachineGuid/g,
+            // 匹配: REG.exe QUERY ... (简化版本，没有变量前缀，可能在其他地方)
+            /REG\.exe\s+QUERY\s+HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography\s+\/v\s+MachineGuid/g,
+            // 匹配: reg query "HKLM\SOFTWARE\Microsoft\Cryptography" /v MachineGuid (带引号版本)
+            /reg\s+query\s+["']HKLM\\SOFTWARE\\Microsoft\\Cryptography["']\s+\/v\s+MachineGuid/gi,
+            // 匹配: reg query HKLM\SOFTWARE\Microsoft\Cryptography /v MachineGuid (不带引号)
+            /reg\s+query\s+HKLM\\SOFTWARE\\Microsoft\\Cryptography\s+\/v\s+MachineGuid/gi,
+          ]
+          
+          const regReplacement = 'powershell -Command "[guid]::NewGuid().ToString().ToLower()"'
+          
+          for (const pattern of regPatterns) {
+            if (pattern.test(content)) {
+              const beforeLength = content.length
+              content = content.replace(pattern, regReplacement)
+              // 验证是否真的替换了
+              if (content.length !== beforeLength || content.includes(regReplacement)) {
+                modified = true
+                details.push(`✅ 已替换 REG.exe 命令（系统MachineGuid获取）`)
+                break // 只替换一次
+              }
+            }
+          }
 
           // 替换各种可能的标识符
           const patterns = [
@@ -314,8 +383,8 @@ export class DeepResetManager {
             }
           }
 
-          // 只有确实修改了才写入
-          if (modified) {
+          // 如果内容改变了才写入
+          if (content !== originalContent) {
             fs.writeFileSync(file.path, content, 'utf-8')
             details.push(`✅ 已修改: ${file.name}`)
             modifiedCount++
