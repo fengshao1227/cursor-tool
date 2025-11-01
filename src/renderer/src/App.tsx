@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Account, AppConfig } from '../../shared/types'
+import { Account, AppConfig, Announcement } from '../../shared/types'
 import HomePanel from './components/HomePanel'
 import AccountList from './components/AccountList'
 import AddAccountModal from './components/AddAccountModal'
@@ -7,8 +7,8 @@ import ToolPanel from './components/ToolPanel'
 import BackupPanel from './components/BackupPanel'
 import SettingsPanel from './components/SettingsPanel'
 import LicenseModal from './components/LicenseModal'
+import AnnouncementModal from './components/AnnouncementModal'
 import Sidebar, { NavItem } from './components/Sidebar'
-import { AnnouncementBanner } from './components/AnnouncementBanner'
 import { Plus, UserPlus, Key } from 'phosphor-react'
 
 function App() {
@@ -26,6 +26,8 @@ function App() {
   const [platformClass, setPlatformClass] = useState('')
   const [showCursorPathModal, setShowCursorPathModal] = useState(false)
   const [cursorPathSearching, setCursorPathSearching] = useState(false)
+  const [announcement, setAnnouncement] = useState<Announcement | null>(null)
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
 
   // 检测平台
   useEffect(() => {
@@ -37,6 +39,19 @@ function App() {
       setPlatformClass('platform-linux')
     }
   }, [])
+
+  // 检查在线公告（最高优先级）
+  const checkAnnouncement = async () => {
+    try {
+      const data = await window.api.getAnnouncement()
+      if (data) {
+        setAnnouncement(data)
+        setShowAnnouncementModal(true)
+      }
+    } catch (error) {
+      console.error('获取公告失败:', error)
+    }
+  }
 
   // 检查卡密有效期（改用新逻辑）
   const checkLicense = async () => {
@@ -117,8 +132,9 @@ function App() {
   }
 
   useEffect(() => {
-    checkCursorPath()  // 最优先：检查Cursor路径
-    checkLicense()     // 其次：检查许可证
+    checkAnnouncement() // 最优先：检查在线公告
+    checkCursorPath()   // 其次：检查Cursor路径
+    checkLicense()      // 再次：检查许可证
     loadData()
 
     // 定时刷新Cursor运行状态
@@ -127,7 +143,15 @@ function App() {
       setIsCursorRunning(running)
     }, 3000)
 
-    return () => clearInterval(interval)
+    // 每30分钟自动检查公告
+    const announcementInterval = setInterval(() => {
+      checkAnnouncement()
+    }, 30 * 60 * 1000)
+
+    return () => {
+      clearInterval(interval)
+      clearInterval(announcementInterval)
+    }
   }, [])
 
   const handleAddAccount = async (
@@ -326,15 +350,8 @@ function App() {
         )}
 
         {/* 内容 */}
-        <div className="flex-1 overflow-y-auto">
-          {/* 在线公告 - 显示在所有页面顶部，优先级最高 */}
-          <div className="px-6 pt-4">
-            <AnnouncementBanner />
-          </div>
-          
-          <div className="h-full">
-            {renderContent()}
-          </div>
+        <div className="flex-1 overflow-hidden">
+          {renderContent()}
         </div>
 
         {/* 底部状态栏 */}
@@ -371,6 +388,17 @@ function App() {
         <AddAccountModal
           onClose={() => setIsAddModalOpen(false)}
           onAdd={handleAddAccount}
+        />
+      )}
+
+      {/* 在线公告弹窗 - 最高优先级 */}
+      {showAnnouncementModal && announcement && (
+        <AnnouncementModal
+          announcement={announcement}
+          onClose={() => {
+            setShowAnnouncementModal(false)
+            setAnnouncement(null)
+          }}
         />
       )}
 
