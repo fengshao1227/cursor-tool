@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "mysql": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@liangshanli/mcp-server-mysql"
+      ],
+      "env": {
+        "MYSQL_HOST": "117.72.163.3",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "root",
+        "MYSQL_PASSWORD": "MyStrongPassword123!",
+        "MYSQL_DATABASE": "license_db"
+      }
+    }
+  }
+}

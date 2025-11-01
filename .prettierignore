@@ -1,0 +1,8 @@
+# Prettier忽略文件
+node_modules/
+out/
+dist/
+release/
+*.log
+package-lock.json
+
