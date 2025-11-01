@@ -1,7 +1,7 @@
 // 加载环境变量配置（必须在其他导入之前）
 import * as dotenv from 'dotenv'
 import * as path from 'path'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 dotenv.config({ path: path.join(__dirname, '../../.env') })
 
 import { accountService } from './account-service'
@@ -27,14 +27,21 @@ function createWindow(): void {
       nodeIntegration: false,
     },
     title: 'Cursor 账号管理器',
-  }
-
-  // Mac特定的窗口样式
-  if (process.platform === 'darwin') {
-    windowOptions.titleBarStyle = 'hiddenInset'
+    // Windows/Linux: 隐藏菜单栏
+    autoHideMenuBar: true,
+    // Windows: 使用更现代的窗口样式
+    frame: true,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
   }
 
   mainWindow = new BrowserWindow(windowOptions)
+
+  // Windows/Linux: 完全移除菜单栏
+  if (process.platform !== 'darwin') {
+    mainWindow.setMenuBarVisibility(false)
+    // 设置空菜单以完全移除菜单栏
+    Menu.setApplicationMenu(null)
+  }
 
   // 开发环境
   if (process.env.NODE_ENV === 'development') {

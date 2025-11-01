@@ -212,6 +212,23 @@ A:
 2. 尝试重新安装Cursor
 3. 等待一段时间后再尝试
 
+### Q: Windows 系统中，Cursor 路径应该填写什么？
+A: 
+应该填写 **Cursor 的文件夹路径**，而不是 exe 文件路径。
+
+**正确示例：**
+- `C:\Users\你的用户名\AppData\Local\Programs\Cursor`
+- `C:\Program Files\Cursor`
+
+**错误示例：**
+- `C:\Users\你的用户名\AppData\Local\Programs\Cursor\Cursor.exe` ❌
+
+工具会自动在您填写的文件夹路径下查找 `Cursor.exe` 文件。如果找不到，会提示路径无效。
+
+**常见默认路径：**
+- 用户安装：`%LOCALAPPDATA%\Programs\Cursor`
+- 系统安装：`%PROGRAMFILES%\Cursor` 或 `%PROGRAMFILES(X86)%\Cursor`
+
 ## 📝 开发计划
 
 - [ ] 添加会话备份恢复功能
