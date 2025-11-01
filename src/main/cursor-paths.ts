@@ -70,18 +70,21 @@ export class CursorPaths {
       if (this.platform === 'darwin') {
         // Mac: 使用 mdfind (Spotlight) 快速搜索
         console.log('🔍 正在搜索Cursor安装位置...')
-        
+
         try {
-          const result = execSync('mdfind "kMDItemKind == Application && kMDItemFSName == Cursor.app"', {
-            encoding: 'utf-8',
-            timeout: 5000,
-          })
-          
+          const result = execSync(
+            'mdfind "kMDItemKind == Application && kMDItemFSName == Cursor.app"',
+            {
+              encoding: 'utf-8',
+              timeout: 5000,
+            }
+          )
+
           const paths = result
             .split('\n')
-            .filter((p) => p.trim())
-            .filter((p) => fs.existsSync(path.join(p, 'Contents', 'MacOS', 'Cursor')))
-          
+            .filter(p => p.trim())
+            .filter(p => fs.existsSync(path.join(p, 'Contents', 'MacOS', 'Cursor')))
+
           found.push(...paths)
         } catch (error) {
           console.warn('mdfind搜索失败，使用备用方案')
@@ -124,7 +127,7 @@ export class CursorPaths {
             encoding: 'utf-8',
             timeout: 5000,
           })
-          const paths = result.split('\n').filter((p) => p.trim())
+          const paths = result.split('\n').filter(p => p.trim())
           for (const execPath of paths) {
             const appPath = path.dirname(path.dirname(execPath.trim()))
             if (fs.existsSync(execPath.trim()) && !found.includes(appPath)) {
@@ -165,11 +168,7 @@ export class CursorPaths {
       // 保存配置
       this.customCursorPath = appPath
       const configPath = path.join(app.getPath('userData'), 'cursor-path.json')
-      fs.writeFileSync(
-        configPath,
-        JSON.stringify({ customPath: appPath }, null, 2),
-        'utf-8'
-      )
+      fs.writeFileSync(configPath, JSON.stringify({ customPath: appPath }, null, 2), 'utf-8')
 
       console.log('✅ 已保存自定义Cursor路径:', appPath)
       return true
@@ -315,6 +314,3 @@ export class CursorPaths {
 }
 
 export const cursorPaths = CursorPaths.getInstance()
-
-
-

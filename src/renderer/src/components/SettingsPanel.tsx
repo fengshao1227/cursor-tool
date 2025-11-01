@@ -1,12 +1,6 @@
 import { AppConfig } from '../../../shared/types'
 import { useState, useEffect } from 'react'
-import {
-  CheckCircle,
-  FolderOpen,
-  MagnifyingGlass,
-  Folder,
-  X
-} from 'phosphor-react'
+import { CheckCircle, FolderOpen, MagnifyingGlass, Folder, X } from 'phosphor-react'
 
 interface Props {
   config: AppConfig & { customCursorAppPath?: string | null }
@@ -40,7 +34,7 @@ export default function SettingsPanel({
     try {
       const paths = await window.api.searchCursorInstallations()
       setFoundPaths(paths)
-      
+
       if (paths.length === 0) {
         alert('❌ 未找到Cursor安装位置\n\n您可以手动输入Cursor的安装路径')
         setShowPathInput(true)
@@ -77,7 +71,7 @@ export default function SettingsPanel({
 
   const handleClearPath = async () => {
     if (!confirm('确定要恢复使用默认Cursor路径吗？')) return
-    
+
     const result = await window.api.clearCustomCursorPath()
     alert(result.message)
     if (result.success) {
@@ -115,17 +109,21 @@ export default function SettingsPanel({
                 <input
                   type="checkbox"
                   checked={config.autoRestart}
-                  onChange={(e) => onToggleConfig('autoRestart', e.target.checked)}
+                  onChange={e => onToggleConfig('autoRestart', e.target.checked)}
                   className="sr-only"
                 />
-                <div className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                  config.autoRestart 
-                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' 
-                    : 'bg-slate-700'
-                }`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${
-                    config.autoRestart ? 'translate-x-6' : 'translate-x-0.5'
-                  } mt-0.5`}></div>
+                <div
+                  className={`w-12 h-6 rounded-full transition-all duration-300 ${
+                    config.autoRestart
+                      ? 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+                      : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${
+                      config.autoRestart ? 'translate-x-6' : 'translate-x-0.5'
+                    } mt-0.5`}
+                  ></div>
                 </div>
               </div>
             </label>
@@ -136,19 +134,21 @@ export default function SettingsPanel({
                 <input
                   type="checkbox"
                   checked={config.backupBeforeSwitch}
-                  onChange={(e) =>
-                    onToggleConfig('backupBeforeSwitch', e.target.checked)
-                  }
+                  onChange={e => onToggleConfig('backupBeforeSwitch', e.target.checked)}
                   className="sr-only"
                 />
-                <div className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                  config.backupBeforeSwitch 
-                    ? 'bg-gradient-to-r from-emerald-500 to-cyan-500' 
-                    : 'bg-slate-700'
-                }`}>
-                  <div className={`w-5 h-5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${
-                    config.backupBeforeSwitch ? 'translate-x-6' : 'translate-x-0.5'
-                  } mt-0.5`}></div>
+                <div
+                  className={`w-12 h-6 rounded-full transition-all duration-300 ${
+                    config.backupBeforeSwitch
+                      ? 'bg-gradient-to-r from-emerald-500 to-cyan-500'
+                      : 'bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 bg-white rounded-full shadow-lg transform transition-transform duration-300 ${
+                      config.backupBeforeSwitch ? 'translate-x-6' : 'translate-x-0.5'
+                    } mt-0.5`}
+                  ></div>
                 </div>
               </div>
             </label>
@@ -156,7 +156,10 @@ export default function SettingsPanel({
         </div>
 
         {/* Cursor路径管理 */}
-        <div className={`glass-card rounded-2xl p-6 card-hover animate-slide-up ${autoOpenPathSelector ? 'ring-2 ring-yellow-500/50 animate-pulse' : ''}`} style={{ animationDelay: '50ms' }}>
+        <div
+          className={`glass-card rounded-2xl p-6 card-hover animate-slide-up ${autoOpenPathSelector ? 'ring-2 ring-yellow-500/50 animate-pulse' : ''}`}
+          style={{ animationDelay: '50ms' }}
+        >
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400">
               <FolderOpen size={20} weight="bold" />
@@ -216,7 +219,9 @@ export default function SettingsPanel({
           {/* 找到多个路径，让用户选择 */}
           {foundPaths.length > 1 && (
             <div className="mt-4 space-y-2">
-              <p className="text-xs text-slate-400 font-medium">找到 {foundPaths.length} 个安装位置：</p>
+              <p className="text-xs text-slate-400 font-medium">
+                找到 {foundPaths.length} 个安装位置：
+              </p>
               {foundPaths.map((path, idx) => (
                 <button
                   key={idx}
@@ -228,9 +233,7 @@ export default function SettingsPanel({
                     transition-all duration-200
                   "
                 >
-                  <p className="text-xs font-mono text-slate-300 break-all">
-                    {path}
-                  </p>
+                  <p className="text-xs font-mono text-slate-300 break-all">{path}</p>
                 </button>
               ))}
             </div>
@@ -263,10 +266,11 @@ export default function SettingsPanel({
                 <input
                   type="text"
                   value={manualPath}
-                  onChange={(e) => setManualPath(e.target.value)}
-                  placeholder={window.platform.isMac 
-                    ? '/Applications/Cursor.app' 
-                    : 'C:\\Users\\...\\Programs\\Cursor'
+                  onChange={e => setManualPath(e.target.value)}
+                  placeholder={
+                    window.platform.isMac
+                      ? '/Applications/Cursor.app'
+                      : 'C:\\Users\\...\\Programs\\Cursor'
                   }
                   className="
                     w-full px-3 py-2 text-sm
@@ -314,4 +318,3 @@ export default function SettingsPanel({
     </div>
   )
 }
-

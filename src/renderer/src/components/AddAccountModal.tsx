@@ -23,13 +23,13 @@ export default function AddAccountModal({ onClose, onAdd }: Props) {
   }
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 no-drag-region animate-fade-in p-4"
       onClick={onClose}
     >
-      <div 
+      <div
         className="glass-card rounded-3xl shadow-2xl w-full max-w-lg mx-4 animate-slide-up overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         {/* 头部 */}
         <div className="relative p-6 border-b border-white/10">
@@ -39,9 +39,7 @@ export default function AddAccountModal({ onClose, onAdd }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-2xl font-bold text-white mb-1">添加新账号</h3>
-              <p className="text-sm text-slate-400">
-                输入 Cursor 账号的邮箱和访问令牌
-              </p>
+              <p className="text-sm text-slate-400">输入 Cursor 账号的邮箱和访问令牌</p>
             </div>
             <button
               onClick={onClose}
@@ -69,7 +67,7 @@ export default function AddAccountModal({ onClose, onAdd }: Props) {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={e => setEmail(e.target.value)}
               placeholder="user@example.com"
               className="
                 w-full px-4 py-3 
@@ -94,7 +92,7 @@ export default function AddAccountModal({ onClose, onAdd }: Props) {
             </label>
             <textarea
               value={token}
-              onChange={(e) => setToken(e.target.value)}
+              onChange={e => setToken(e.target.value)}
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
               className="
                 w-full px-4 py-3 
@@ -113,8 +111,8 @@ export default function AddAccountModal({ onClose, onAdd }: Props) {
               required
             />
             <p className="text-xs text-slate-500 px-2 flex items-center gap-1">
-              <span className="text-slate-600">💡</span>
-              从 Cursor 的 state.vscdb 中获取的 accessToken
+              <span className="text-slate-600">💡</span>从 Cursor 的 state.vscdb 中获取的
+              accessToken
             </p>
           </div>
 
@@ -128,7 +126,7 @@ export default function AddAccountModal({ onClose, onAdd }: Props) {
             <input
               type="text"
               value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
+              onChange={e => setNickname(e.target.value)}
               placeholder="工作账号、个人账号..."
               className="
                 w-full px-4 py-3 

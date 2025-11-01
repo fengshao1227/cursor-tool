@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as crypto from 'crypto'
+import Database from 'better-sqlite3'
 import { cursorPaths } from './cursor-paths'
 
 /**
@@ -304,12 +305,7 @@ export class MachineIdManager {
       }
 
       // 6. 重置state.vscdb（清除认证信息）
-      const stateDbPath = path.join(
-        cursorPaths.dataPath,
-        'User',
-        'globalStorage',
-        'state.vscdb'
-      )
+      const stateDbPath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'state.vscdb')
       if (fs.existsSync(stateDbPath)) {
         // 备份
         const backupPath = stateDbPath + '.factory-backup-' + Date.now()
@@ -317,7 +313,6 @@ export class MachineIdManager {
 
         // 清除认证信息
         try {
-          const Database = require('better-sqlite3')
           const db = new Database(stateDbPath)
 
           const keysToDelete = [
@@ -394,7 +389,7 @@ export class MachineIdManager {
    */
   private deleteFolderRecursive(folderPath: string): void {
     if (fs.existsSync(folderPath)) {
-      fs.readdirSync(folderPath).forEach((file) => {
+      fs.readdirSync(folderPath).forEach(file => {
         const curPath = path.join(folderPath, file)
         if (fs.lstatSync(curPath).isDirectory()) {
           this.deleteFolderRecursive(curPath)
@@ -422,7 +417,7 @@ export class MachineIdManager {
       const dir = path.dirname(storagePath)
       const files = fs.readdirSync(dir)
       const backups = files
-        .filter((f) => f.startsWith('storage.json.backup-'))
+        .filter(f => f.startsWith('storage.json.backup-'))
         .sort()
         .reverse()
 
@@ -441,4 +436,3 @@ export class MachineIdManager {
 }
 
 export const machineIdManager = new MachineIdManager()
-

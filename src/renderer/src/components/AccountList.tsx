@@ -6,7 +6,7 @@ import {
   Trash,
   User,
   Clock,
-  Calendar
+  Calendar,
 } from 'phosphor-react'
 
 interface Props {
@@ -61,24 +61,27 @@ function AccountCard({ account, index, onDelete, onSwitch }: AccountCardProps) {
         ${isActive ? 'gradient-border-glow' : 'gradient-border'}
         ${isActive ? 'shadow-lg' : ''}
       `}
-      style={{ 
+      style={{
         animationDelay: `${index * 50}ms`,
-        ...(isActive && { boxShadow: '0 8px 32px rgba(167, 139, 250, 0.3)' })
+        ...(isActive && { boxShadow: '0 8px 32px rgba(167, 139, 250, 0.3)' }),
       }}
     >
       {/* 头部 - 头像和状态 */}
       <div className="flex items-start gap-4 mb-4">
         {/* 头像 */}
-        <div className={`
+        <div
+          className={`
           w-12 h-12 rounded-xl flex items-center justify-center
           flex-shrink-0
-          ${isActive 
-            ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 ring-2 ring-purple-500/50' 
-            : 'bg-gradient-to-br from-slate-700/50 to-slate-600/50'
+          ${
+            isActive
+              ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 ring-2 ring-purple-500/50'
+              : 'bg-gradient-to-br from-slate-700/50 to-slate-600/50'
           }
-        `}>
-          <User 
-            size={24} 
+        `}
+        >
+          <User
+            size={24}
             weight={isActive ? 'fill' : 'regular'}
             className={isActive ? 'text-purple-300' : 'text-slate-400'}
           />
@@ -91,18 +94,16 @@ function AccountCard({ account, index, onDelete, onSwitch }: AccountCardProps) {
               {account.nickname || account.email}
             </h3>
             {isActive && (
-              <CheckCircle 
-                size={20} 
-                weight="fill" 
+              <CheckCircle
+                size={20}
+                weight="fill"
                 className="flex-shrink-0 text-emerald-400 animate-pulse"
               />
             )}
           </div>
-          
+
           {account.nickname && (
-            <p className="text-sm text-slate-400 truncate-1 mb-1">
-              {account.email}
-            </p>
+            <p className="text-sm text-slate-400 truncate-1 mb-1">{account.email}</p>
           )}
 
           {isActive && (
@@ -124,7 +125,6 @@ function AccountCard({ account, index, onDelete, onSwitch }: AccountCardProps) {
         </p>
       </div>
 
-
       {/* 操作按钮 */}
       <div className="flex gap-2">
         <button
@@ -134,9 +134,10 @@ function AccountCard({ account, index, onDelete, onSwitch }: AccountCardProps) {
             flex-1 flex items-center justify-center gap-2
             px-4 py-2.5 text-sm font-semibold rounded-xl
             transition-all duration-300
-            ${isActive
-              ? 'bg-slate-700/30 text-slate-500 cursor-not-allowed'
-              : 'btn-gradient-primary'
+            ${
+              isActive
+                ? 'bg-slate-700/30 text-slate-500 cursor-not-allowed'
+                : 'btn-gradient-primary'
             }
           `}
         >
@@ -186,10 +187,12 @@ function AccountCard({ account, index, onDelete, onSwitch }: AccountCardProps) {
 
       {/* 活动账号的额外发光效果 */}
       {isActive && (
-        <div className="absolute inset-0 rounded-2xl pointer-events-none"
-             style={{ 
-               background: 'radial-gradient(circle at 50% 0%, rgba(167, 139, 250, 0.1) 0%, transparent 70%)',
-             }}
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(circle at 50% 0%, rgba(167, 139, 250, 0.1) 0%, transparent 70%)',
+          }}
         />
       )}
     </div>

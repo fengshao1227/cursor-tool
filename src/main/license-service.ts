@@ -61,9 +61,9 @@ function httpFetch<T = any>(url: string, body: any): Promise<T> {
           'content-length': data.length,
         },
       },
-      (res) => {
+      res => {
         const chunks: Buffer[] = []
-        res.on('data', (c) => chunks.push(c))
+        res.on('data', c => chunks.push(c))
         res.on('end', () => {
           const txt = Buffer.concat(chunks).toString('utf-8')
           if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
@@ -114,7 +114,11 @@ function verifySignature(payload: unknown, signatureB64: string): boolean {
   const pub = getPublicKey()
   if (!pub) return false
   try {
-    const publicKey = crypto.createPublicKey({ key: Buffer.from(pub, 'base64'), format: 'der', type: 'spki' })
+    const publicKey = crypto.createPublicKey({
+      key: Buffer.from(pub, 'base64'),
+      format: 'der',
+      type: 'spki',
+    })
     const data = Buffer.from(JSON.stringify(payload))
     return crypto.verify(null, data, publicKey, Buffer.from(signatureB64, 'base64'))
   } catch {
@@ -127,7 +131,7 @@ function nowIso(): string {
 }
 
 export class LicenseService {
-  async activate(licenseKey: string): Promise<{ 
+  async activate(licenseKey: string): Promise<{
     success: boolean
     message: string
     cursorToken?: string
@@ -145,18 +149,18 @@ export class LicenseService {
         licenseKey,
         ...(machineId && { machineId }),
         platform: process.platform,
-        hostname: os.hostname()
+        hostname: os.hostname(),
       }
       const resp = await httpFetch<ActivateResponse>(
         new URL('/v1/licenses/activate', url).toString(),
         body
       )
-      
+
       if (!resp.success) {
         // 根据后端返回的错误类型，返回友好的中文提示
         const errorMessage = resp.message || '激活失败'
         let friendlyMessage = errorMessage
-        
+
         // 检查是否是常见的错误类型
         if (errorMessage.includes('卡密不存在') || errorMessage.includes('INVALID_KEY')) {
           friendlyMessage = '❌ 卡密无效，请检查卡密是否正确'
@@ -167,25 +171,25 @@ export class LicenseService {
         } else if (errorMessage.includes('激活失败')) {
           friendlyMessage = '❌ 激活失败，请检查网络连接或联系客服'
         }
-        
+
         return { success: false, message: friendlyMessage }
       }
 
       // 保存卡密和服务器地址
       setConfig('license.key', licenseKey)
       setConfig('license.serverUrl', url)
-      
+
       // 立即调用 verify 接口获取 receipt 和 signature（用于离线验证）
       logger.info('🔐 激活成功，正在获取许可证凭证...')
       try {
         const verifyBody = {
           licenseKey,
-          ...(machineId && { 
-            device: { 
-              machineId, 
-              platform: process.platform, 
-              hostname: os.hostname() 
-            } 
+          ...(machineId && {
+            device: {
+              machineId,
+              platform: process.platform,
+              hostname: os.hostname(),
+            },
           }),
           appVersion: (pkg as any).version,
         }
@@ -193,7 +197,7 @@ export class LicenseService {
           new URL('/v1/licenses/verify', url).toString(),
           verifyBody
         )
-        
+
         // 验证签名（如果签名为空则跳过验证）
         if (!verifyResp.signature || verifySignature(verifyResp.receipt, verifyResp.signature)) {
           setConfig('license.receipt', JSON.stringify(verifyResp.receipt))
@@ -206,7 +210,7 @@ export class LicenseService {
       } catch (verifyError) {
         logger.warn('⚠️ 获取许可证凭证失败:', verifyError)
       }
-      
+
       // 返回 Token、Email 和有效期信息
       return {
         success: true,
@@ -214,17 +218,17 @@ export class LicenseService {
         cursorToken: resp.data?.cursorToken,
         cursorEmail: resp.data?.cursorEmail,
         expiresAt: resp.data?.expiresAt,
-        remainingDays: resp.data?.remainingDays
+        remainingDays: resp.data?.remainingDays,
       }
     } catch (e: any) {
       // 处理网络错误或其他异常
       let errorMessage = '激活失败'
-      
+
       // 检查是否有解析后的错误响应
       if (e.response && e.response.message) {
         const errorCode = e.errorCode || e.response.error
         const responseMessage = e.response.message
-        
+
         // 根据错误代码返回友好的中文提示
         if (errorCode === 'INVALID_KEY' || responseMessage.includes('卡密不存在')) {
           errorMessage = '❌ 卡密无效，请检查卡密是否正确'
@@ -249,7 +253,7 @@ export class LicenseService {
           errorMessage = `❌ ${e.message}`
         }
       }
-      
+
       return { success: false, message: errorMessage }
     }
   }
@@ -287,31 +291,31 @@ export class LicenseService {
     const machineId = machineIdManager.getCurrentMachineId()
     const body = {
       licenseKey,
-      ...(machineId && { 
-        device: { 
-          machineId, 
-          platform: process.platform, 
-          hostname: os.hostname() 
-        } 
+      ...(machineId && {
+        device: {
+          machineId,
+          platform: process.platform,
+          hostname: os.hostname(),
+        },
       }),
       appVersion: (pkg as any).version,
     }
-    
+
     try {
       const resp = await httpFetch(new URL('/v1/licenses/verify', serverUrl).toString(), body)
-      
+
       // 检查返回的格式 - 后端可能返回 { valid: false } 或 { success: false }
       if (resp.valid === false || resp.success === false) {
         // 验证失败，清除本地配置
         this.clearLocalLicense()
         return { success: false, message: resp.message || '卡密验证失败' }
       }
-      
+
       // 如果签名为空则跳过验证（简化版验证服务）
       if (resp.signature && !verifySignature(resp.receipt, resp.signature)) {
         return { success: false, message: '签名校验失败' }
       }
-      
+
       setConfig('license.receipt', JSON.stringify(resp.receipt))
       setConfig('license.signature', resp.signature || '')
       setConfig('license.lastVerifyAt', nowIso())
@@ -354,7 +358,7 @@ export class LicenseService {
     if (!isLicenseCheckEnabled()) {
       return { valid: true, expiresAt: undefined, notAfter: undefined }
     }
-    
+
     try {
       const receiptStr = getConfig('license.receipt')
       const sig = getConfig('license.signature') || ''
@@ -365,8 +369,20 @@ export class LicenseService {
       const now = Date.now()
       const expiresAt = Date.parse(receipt.expiresAt)
       const notAfter = Date.parse(receipt.notAfter)
-      if (now > expiresAt) return { valid: false, message: '许可证已过期', expiresAt: receipt.expiresAt, notAfter: receipt.notAfter }
-      if (now > notAfter) return { valid: false, message: '离线宽限已过', expiresAt: receipt.expiresAt, notAfter: receipt.notAfter }
+      if (now > expiresAt)
+        return {
+          valid: false,
+          message: '许可证已过期',
+          expiresAt: receipt.expiresAt,
+          notAfter: receipt.notAfter,
+        }
+      if (now > notAfter)
+        return {
+          valid: false,
+          message: '离线宽限已过',
+          expiresAt: receipt.expiresAt,
+          notAfter: receipt.notAfter,
+        }
       return { valid: true, expiresAt: receipt.expiresAt, notAfter: receipt.notAfter }
     } catch (e: any) {
       return { valid: false, message: e?.message || '状态错误' }
@@ -378,7 +394,7 @@ export class LicenseService {
     if (!isLicenseCheckEnabled()) {
       return { success: true, message: '免费版：无需验证' }
     }
-    
+
     // 优先在线验证，确保卡密仍然有效
     try {
       const online = await this.verifyOnline()
@@ -388,13 +404,13 @@ export class LicenseService {
     } catch (e: any) {
       // 网络错误或其他异常
       logger.warn('在线验证失败，尝试离线验证:', e)
-      
+
       // 如果错误是卡密不存在，清除本地配置
       if (e.response && e.response.error === 'INVALID_KEY') {
         this.clearLocalLicense()
         return { success: false, message: '卡密不存在，已清除本地配置' }
       }
-      
+
       // 其他错误，尝试离线验证（仅在网络问题时使用）
       const status = this.getStatus()
       if (status.valid) {
@@ -407,5 +423,3 @@ export class LicenseService {
 }
 
 export const licenseService = new LicenseService()
-
-

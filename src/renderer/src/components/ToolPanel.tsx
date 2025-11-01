@@ -1,10 +1,4 @@
-import {
-  Power,
-  ArrowsClockwise,
-  Fingerprint,
-  Fire,
-  Lightning
-} from 'phosphor-react'
+import { Power, ArrowsClockwise, Fingerprint, Fire, Lightning } from 'phosphor-react'
 
 interface Props {
   machineId: string
@@ -19,7 +13,6 @@ export default function ToolPanel({
   onResetMachineId,
   onRefresh,
 }: Props) {
-
   const handleKillCursor = async () => {
     const result = await window.api.killCursor()
     alert(result.message)
@@ -31,7 +24,6 @@ export default function ToolPanel({
     alert(result.message)
     onRefresh()
   }
-
 
   return (
     <div className="h-full flex flex-col">
@@ -46,13 +38,16 @@ export default function ToolPanel({
         {/* Cursor状态 */}
         <div className="glass-card rounded-2xl p-6 card-hover animate-slide-up">
           <div className="flex items-center gap-3 mb-5">
-            <div className={`
+            <div
+              className={`
               w-10 h-10 rounded-xl flex items-center justify-center
-              ${isCursorRunning 
-                ? 'bg-emerald-500/20 text-emerald-400' 
-                : 'bg-slate-700/50 text-slate-500'
+              ${
+                isCursorRunning
+                  ? 'bg-emerald-500/20 text-emerald-400'
+                  : 'bg-slate-700/50 text-slate-500'
               }
-            `}>
+            `}
+            >
               <Power size={20} weight="bold" />
             </div>
             <div>
@@ -71,9 +66,11 @@ export default function ToolPanel({
                 }`}
                 style={{ boxShadow: isCursorRunning ? '0 0 10px rgba(74, 222, 128, 0.6)' : 'none' }}
               />
-              <span className={`text-sm font-semibold ${
-                isCursorRunning ? 'text-emerald-400' : 'text-slate-500'
-              }`}>
+              <span
+                className={`text-sm font-semibold ${
+                  isCursorRunning ? 'text-emerald-400' : 'text-slate-500'
+                }`}
+              >
                 {isCursorRunning ? '运行中' : '未运行'}
               </span>
             </div>
@@ -117,7 +114,10 @@ export default function ToolPanel({
         </div>
 
         {/* 机器码管理 */}
-        <div className="glass-card rounded-2xl p-6 card-hover animate-slide-up" style={{ animationDelay: '50ms' }}>
+        <div
+          className="glass-card rounded-2xl p-6 card-hover animate-slide-up"
+          style={{ animationDelay: '50ms' }}
+        >
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
               <Fingerprint size={20} weight="bold" />
@@ -132,9 +132,7 @@ export default function ToolPanel({
           <div className="mb-5">
             <p className="text-xs text-slate-400 mb-2 font-medium">当前机器码</p>
             <div className="p-3 rounded-xl bg-black/30 border border-white/5">
-              <p className="text-xs font-mono text-slate-300 break-all">
-                {machineId || '未找到'}
-              </p>
+              <p className="text-xs font-mono text-slate-300 break-all">{machineId || '未找到'}</p>
             </div>
           </div>
 
@@ -155,18 +153,20 @@ export default function ToolPanel({
               <ArrowsClockwise size={16} weight="bold" />
               <span>重置机器码</span>
             </button>
-            <p className="text-xs text-slate-500 px-2">
-              ⚠️ 重置后 Cursor 会被登出，需要重新登录
-            </p>
+            <p className="text-xs text-slate-500 px-2">⚠️ 重置后 Cursor 会被登出，需要重新登录</p>
 
             <button
               onClick={async () => {
-                if (!confirm('⚠️ 这将彻底清除Cursor所有数据，包括：\n\n✓ 机器码\n✓ 登录状态\n✓ 所有缓存\n✓ 工作区历史\n✓ 扩展数据\n\n确定要恢复出厂设置吗？')) {
+                if (
+                  !confirm(
+                    '⚠️ 这将彻底清除Cursor所有数据，包括：\n\n✓ 机器码\n✓ 登录状态\n✓ 所有缓存\n✓ 工作区历史\n✓ 扩展数据\n\n确定要恢复出厂设置吗？'
+                  )
+                ) {
                   return
                 }
-                
+
                 const result = await window.api.factoryReset()
-                
+
                 if (result.success && result.details) {
                   alert(`${result.message}\n\n清理详情：\n${result.details.join('\n')}`)
                   onRefresh()
@@ -193,12 +193,16 @@ export default function ToolPanel({
 
             <button
               onClick={async () => {
-                if (!confirm('🔥🔥🔥 深度重置警告 🔥🔥🔥\n\n这将执行最彻底的重置，包括：\n\n✓ 修改系统UUID\n✓ 修改Cursor程序文件\n✓ 移除并重新签名应用\n✓ 清除DNS缓存\n✓ 重置所有机器码\n✓ 清除所有数据\n\n⚠️ 需要管理员权限！\n⚠️ Cursor签名会失效！\n⚠️ 首次启动需要允许运行！\n\n确定要执行深度重置吗？')) {
+                if (
+                  !confirm(
+                    '🔥🔥🔥 深度重置警告 🔥🔥🔥\n\n这将执行最彻底的重置，包括：\n\n✓ 修改系统UUID\n✓ 修改Cursor程序文件\n✓ 移除并重新签名应用\n✓ 清除DNS缓存\n✓ 重置所有机器码\n✓ 清除所有数据\n\n⚠️ 需要管理员权限！\n⚠️ Cursor签名会失效！\n⚠️ 首次启动需要允许运行！\n\n确定要执行深度重置吗？'
+                  )
+                ) {
                   return
                 }
-                
+
                 const result = await window.api.deepReset()
-                
+
                 if (result.success && result.details) {
                   alert(`${result.message}\n\n${result.details.join('\n')}`)
                   onRefresh()
@@ -229,7 +233,6 @@ export default function ToolPanel({
             </p>
           </div>
         </div>
-
       </div>
     </div>
   )

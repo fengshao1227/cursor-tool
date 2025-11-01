@@ -112,7 +112,7 @@ export class AppDatabase {
       )
       .all() as any[]
 
-    return rows.map((row) => ({
+    return rows.map(row => ({
       id: row.id,
       email: row.email,
       token: row.token,
@@ -182,7 +182,12 @@ export class AppDatabase {
   /**
    * 添加账号
    */
-  addAccount(email: string, accessToken: string, refreshToken?: string, nickname?: string): Account {
+  addAccount(
+    email: string,
+    accessToken: string,
+    refreshToken?: string,
+    nickname?: string
+  ): Account {
     const id = this.generateId()
     const now = new Date().toISOString()
 
@@ -200,11 +205,11 @@ export class AppDatabase {
    * 添加账号（兼容方法，实际不需要有效期参数了）
    */
   addAccountWithExpiry(
-    email: string, 
-    accessToken: string, 
-    refreshToken?: string, 
+    email: string,
+    accessToken: string,
+    refreshToken?: string,
     nickname?: string,
-    _licenseExpiresAt?: string  // 废弃参数，保留兼容性
+    _licenseExpiresAt?: string // 废弃参数，保留兼容性
   ): Account {
     // 直接调用普通的添加账号方法
     return this.addAccount(email, accessToken, refreshToken, nickname)
@@ -378,9 +383,7 @@ export class AppDatabase {
    * 添加操作日志
    */
   addLog(action: string, details?: string): void {
-    this.db
-      .prepare('INSERT INTO logs (action, details) VALUES (?, ?)')
-      .run(action, details || null)
+    this.db.prepare('INSERT INTO logs (action, details) VALUES (?, ?)').run(action, details || null)
   }
 
   /**
@@ -470,13 +473,16 @@ export class AppDatabase {
   /**
    * 更新卡密
    */
-  updateLicense(id: string, data: {
-    nickname?: string
-    cursorEmail?: string
-    cursorToken?: string
-    expiresAt?: string
-    status?: string
-  }): boolean {
+  updateLicense(
+    id: string,
+    data: {
+      nickname?: string
+      cursorEmail?: string
+      cursorToken?: string
+      expiresAt?: string
+      status?: string
+    }
+  ): boolean {
     const license = this.getLicenseById(id)
     if (!license) return false
 
@@ -571,9 +577,7 @@ export class AppDatabase {
    * 设置配置
    */
   setConfig(key: string, value: string): void {
-    this.db
-      .prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)')
-      .run(key, value)
+    this.db.prepare('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)').run(key, value)
   }
 
   /**
@@ -585,4 +589,3 @@ export class AppDatabase {
 }
 
 export const appDatabase = new AppDatabase()
-

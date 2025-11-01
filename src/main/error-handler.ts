@@ -82,9 +82,7 @@ export function handleIpcError(error: unknown): OperationResult {
 /**
  * 包装异步函数，自动处理错误
  */
-export function wrapAsync<T extends (...args: any[]) => Promise<any>>(
-  fn: T
-): T {
+export function wrapAsync<T extends (...args: any[]) => Promise<any>>(fn: T): T {
   return (async (...args: Parameters<T>) => {
     try {
       return await fn(...args)
@@ -116,4 +114,3 @@ export default {
   wrapAsync,
   createFriendlyErrorMessage,
 }
-

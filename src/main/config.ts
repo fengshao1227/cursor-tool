@@ -29,14 +29,14 @@ function getEnv(key: string, defaultValue: string): string {
 const getDefaultConfig = (): AppConfig => ({
   app: {
     name: 'Cursor账号管理器',
-    version: '1.0.0',
+    version: '1.1.0',
   },
   license: {
     // 如果没有配置环境变量，使用空字符串，避免暴露真实IP
     serverUrl: '',
     publicKey: '',
   },
-  // 通过环境变量控制是否启用卡密验证（默认禁用，需要显式启用）
+  // 通过环境变量控制是否启用卡密验证（默认禁用，免费版）
   enableLicenseCheck: process.env.ENABLE_LICENSE_CHECK === 'true',
 })
 
@@ -45,18 +45,19 @@ const getDefaultConfig = (): AppConfig => ({
  */
 export function getConfig(): AppConfig {
   // 动态导入以避免循环依赖
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { appDatabase } = require('./database')
-  
+
   // 优先使用环境变量
   const serverUrl = getEnv('LICENSE_SERVER_URL', '')
   const publicKey = getEnv('LICENSE_PUBLIC_KEY', '')
-  
+
   // 如果环境变量未设置，尝试从数据库读取
   const dbServerUrl = appDatabase.getConfig('license.serverUrl') || ''
   const dbPublicKey = appDatabase.getConfig('license.publicKey') || ''
-  
+
   const defaultConfig = getDefaultConfig()
-  
+
   return {
     app: defaultConfig.app,
     license: {
@@ -81,8 +82,10 @@ export const config = new Proxy({} as AppConfig, {
  * 更新配置（运行时更新）
  */
 export function updateConfig(updates: Partial<AppConfig>): void {
+  // 动态导入以避免循环依赖
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { appDatabase } = require('./database')
-  
+
   if (updates.license?.serverUrl) {
     appDatabase.setConfig('license.serverUrl', updates.license.serverUrl)
   }

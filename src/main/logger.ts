@@ -3,6 +3,8 @@
  * 使用 electron-log 提供统一的日志接口
  */
 import log from 'electron-log'
+import path from 'path'
+import { app } from 'electron'
 
 // 配置日志
 if (process.env.NODE_ENV === 'development') {
@@ -15,8 +17,6 @@ if (process.env.NODE_ENV === 'development') {
 
 // 设置日志文件位置
 log.transports.file.resolvePathFn = () => {
-  const path = require('path')
-  const { app } = require('electron')
   const userDataPath = app.getPath('userData')
   return path.join(userDataPath, 'logs', 'main.log')
 }
@@ -62,4 +62,3 @@ export const logger = {
 
 // 导出默认实例
 export default logger
-

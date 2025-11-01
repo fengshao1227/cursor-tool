@@ -23,8 +23,13 @@ export class ProcessManager {
         } catch (e) {
           // pgrep -x 可能找不到，尝试检查特定路径
           try {
-            const { stdout } = await execAsync('pgrep -f "/Applications/Cursor.app/Contents/MacOS/Cursor"')
-            const pids = stdout.trim().split('\n').filter(pid => pid)
+            const { stdout } = await execAsync(
+              'pgrep -f "/Applications/Cursor.app/Contents/MacOS/Cursor"'
+            )
+            const pids = stdout
+              .trim()
+              .split('\n')
+              .filter(pid => pid)
             // 排除我们自己的进程
             return pids.length > 0
           } catch (e2) {
@@ -38,10 +43,8 @@ export class ProcessManager {
         // tasklist在没找到进程时会返回"信息: 没有运行的任务匹配指定标准。"
         const lines = stdout.trim().split('\n')
         // 过滤出真正的进程行（包含.exe且不是错误信息）
-        const validLines = lines.filter(line => 
-          line.includes('Cursor.exe') && 
-          !line.includes('信息:') && 
-          !line.includes('INFO:')
+        const validLines = lines.filter(
+          line => line.includes('Cursor.exe') && !line.includes('信息:') && !line.includes('INFO:')
         )
         return validLines.length > 0
       }
@@ -64,31 +67,31 @@ export class ProcessManager {
           return stdout
             .trim()
             .split('\n')
-            .filter((pid) => pid)
-            .map((pid) => parseInt(pid, 10))
+            .filter(pid => pid)
+            .map(pid => parseInt(pid, 10))
         } catch (e) {
           // 使用完整路径匹配
-          const { stdout } = await execAsync('pgrep -f "/Applications/Cursor.app/Contents/MacOS/Cursor"')
+          const { stdout } = await execAsync(
+            'pgrep -f "/Applications/Cursor.app/Contents/MacOS/Cursor"'
+          )
           return stdout
             .trim()
             .split('\n')
-            .filter((pid) => pid)
-            .map((pid) => parseInt(pid, 10))
+            .filter(pid => pid)
+            .map(pid => parseInt(pid, 10))
         }
       } else if (process.platform === 'win32') {
-        const { stdout } = await execAsync(
-          'tasklist /FI "IMAGENAME eq Cursor.exe" /FO CSV /NH'
-        )
+        const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq Cursor.exe" /FO CSV /NH')
         const lines = stdout.trim().split('\n')
         // CSV格式: "Image Name","PID","Session Name","Session#","Mem Usage"
         // 只处理包含Cursor.exe的有效行
         return lines
           .filter(line => line.includes('Cursor.exe'))
-          .map((line) => {
+          .map(line => {
             const match = line.match(/"Cursor\.exe","(\d+)",/)
             return match ? parseInt(match[1], 10) : 0
           })
-          .filter((pid) => pid > 0)
+          .filter(pid => pid > 0)
       }
       return []
     } catch (error) {
@@ -112,7 +115,7 @@ export class ProcessManager {
           await execAsync('osascript -e \'tell application "Cursor" to quit\'')
           // 等待最多5秒让应用优雅退出
           for (let i = 0; i < 10; i++) {
-            await new Promise((resolve) => setTimeout(resolve, 500))
+            await new Promise(resolve => setTimeout(resolve, 500))
             if (!(await this.isCursorRunning())) {
               return true
             }
@@ -142,7 +145,7 @@ export class ProcessManager {
       }
 
       // 等待进程完全退出
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
       return !(await this.isCursorRunning())
     } catch (error) {
       console.error('Error killing Cursor:', error)
@@ -188,11 +191,10 @@ export class ProcessManager {
     }
 
     // 等待1秒确保完全退出
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
     return await this.launchCursor()
   }
 }
 
 export const processManager = new ProcessManager()
-

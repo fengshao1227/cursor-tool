@@ -6,7 +6,7 @@ import {
   Trash,
   Package,
   CheckCircle,
-  Warning
+  Warning,
 } from 'phosphor-react'
 
 interface Backup {
@@ -37,8 +37,12 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
 
   const handleBackupAll = async () => {
     const accountInfo = currentAccountEmail ? `\n账号: ${currentAccountEmail}` : ''
-    
-    if (!confirm(`确定要创建完整备份吗？${accountInfo}\n\n将备份以下内容：\n✓ 会话数据（对话历史、工作区等）\n✓ 用户设置（settings.json, keybindings等）\n✓ MCP配置\n✓ 扩展列表和snippets`)) {
+
+    if (
+      !confirm(
+        `确定要创建完整备份吗？${accountInfo}\n\n将备份以下内容：\n✓ 会话数据（对话历史、工作区等）\n✓ 用户设置（settings.json, keybindings等）\n✓ MCP配置\n✓ 扩展列表和snippets`
+      )
+    ) {
       return
     }
 
@@ -62,8 +66,12 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
     } else if (backup.type === 'settings') {
       typeLabel = '设置'
     }
-    
-    if (!confirm(`⚠️ 确定要恢复${typeLabel}吗？\n\n备份信息：\n时间: ${new Date(backup.timestamp).toLocaleString()}\n${backup.accountEmail && backup.accountEmail !== 'all' ? `账号: ${backup.accountEmail}` : ''}\n\n当前数据将被覆盖！`)) {
+
+    if (
+      !confirm(
+        `⚠️ 确定要恢复${typeLabel}吗？\n\n备份信息：\n时间: ${new Date(backup.timestamp).toLocaleString()}\n${backup.accountEmail && backup.accountEmail !== 'all' ? `账号: ${backup.accountEmail}` : ''}\n\n当前数据将被覆盖！`
+      )
+    ) {
       return
     }
 
@@ -87,7 +95,11 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
   }
 
   const handleDelete = async (backup: Backup) => {
-    if (!confirm(`确定要删除这个备份吗？\n\n${backup.name}\n${new Date(backup.timestamp).toLocaleString()}`)) {
+    if (
+      !confirm(
+        `确定要删除这个备份吗？\n\n${backup.name}\n${new Date(backup.timestamp).toLocaleString()}`
+      )
+    ) {
       return
     }
 
@@ -117,7 +129,7 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
       <div className="p-6 border-b border-white/10">
         <h2 className="text-2xl font-bold text-white mb-1">备份管理</h2>
         <p className="text-sm text-slate-400 mb-5">创建和恢复 Cursor 数据备份</p>
-        
+
         <button
           onClick={handleBackupAll}
           disabled={loading}
@@ -139,11 +151,9 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
             <FloppyDisk size={24} weight="fill" className={loading ? 'animate-pulse' : ''} />
             <span className="text-base">{loading ? '创建中...' : '创建完整备份'}</span>
           </div>
-          <div className="text-xs opacity-90">
-            包含会话、设置和 MCP 配置
-          </div>
+          <div className="text-xs opacity-90">包含会话、设置和 MCP 配置</div>
         </button>
-        
+
         {currentAccountEmail && (
           <div className="mt-4 p-3 rounded-xl bg-black/20 border border-white/5">
             <p className="text-xs text-slate-400 text-center">
@@ -180,16 +190,18 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
                     <div className="flex-1 min-w-0">
                       {/* 类型标签 */}
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
-                        <span className={`
+                        <span
+                          className={`
                           inline-flex items-center gap-1.5
                           px-3 py-1.5 text-xs font-semibold rounded-lg
                           bg-gradient-to-r ${typeInfo.color} text-white
                           shadow-md
-                        `}>
+                        `}
+                        >
                           <TypeIcon size={14} weight="fill" />
                           {typeInfo.label}
                         </span>
-                        
+
                         {backup.accountEmail && backup.accountEmail !== 'all' && (
                           <span className="inline-flex items-center gap-1 text-xs text-slate-400 px-2.5 py-1 bg-black/20 rounded-lg border border-white/5">
                             {backup.accountEmail}
@@ -198,9 +210,7 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
                       </div>
 
                       {/* 备份名称 */}
-                      <p className="text-sm text-white font-bold mb-2 truncate-1">
-                        {backup.name}
-                      </p>
+                      <p className="text-sm text-white font-bold mb-2 truncate-1">{backup.name}</p>
 
                       {/* 时间 */}
                       <div className="flex items-center gap-1.5 text-xs text-slate-400">
@@ -234,7 +244,7 @@ export default function BackupPanel({ currentAccountEmail, onRefresh }: Props) {
                       <ArrowsClockwise size={16} weight="bold" />
                       <span>恢复</span>
                     </button>
-                    
+
                     <button
                       onClick={() => handleDelete(backup)}
                       disabled={loading}

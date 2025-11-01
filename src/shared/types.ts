@@ -24,8 +24,8 @@ export interface AppConfig {
   autoRestart: boolean
   backupBeforeSwitch: boolean
   cursorPath?: string
-  licenseExpiresAt?: string  // 全局卡密有效期
-  licenseRemainingDays?: number  // 剩余天数
+  licenseExpiresAt?: string // 全局卡密有效期
+  licenseRemainingDays?: number // 剩余天数
 }
 
 export interface OperationResult {
@@ -66,13 +66,13 @@ export interface IpcApi {
   deleteAccount: (id: string) => Promise<OperationResult>
   switchAccount: (id: string) => Promise<OperationResult>
   importCurrentAccount: (nickname?: string) => Promise<OperationResult>
-  
+
   // 机器码管理
   resetMachineId: () => Promise<OperationResult>
   factoryReset: () => Promise<OperationResult & { details?: string[] }>
   deepReset: () => Promise<OperationResult & { details?: string[] }>
   getCurrentMachineId: () => Promise<string>
-  
+
   // 备份恢复
   backupAll: (accountEmail?: string) => Promise<OperationResult & { backupPath?: string }>
   restoreAll: (backupPath: string) => Promise<OperationResult>
@@ -80,38 +80,42 @@ export interface IpcApi {
   restoreSession: (backupPath: string) => Promise<OperationResult>
   backupSettings: () => Promise<OperationResult & { backupPath?: string }>
   restoreSettings: (backupPath: string) => Promise<OperationResult>
-  getBackups: () => Promise<Array<{
-    name: string
-    path: string
-    type: string
-    timestamp: string
-    accountEmail?: string
-  }>>
+  getBackups: () => Promise<
+    Array<{
+      name: string
+      path: string
+      type: string
+      timestamp: string
+      accountEmail?: string
+    }>
+  >
   deleteBackup: (backupPath: string) => Promise<OperationResult>
-  
+
   // 系统管理
   isCursorRunning: () => Promise<boolean>
   killCursor: () => Promise<OperationResult>
   launchCursor: () => Promise<OperationResult>
   getCursorPath: () => Promise<string>
-  
+
   // Cursor路径管理
   searchCursorInstallations: () => Promise<string[]>
   setCustomCursorPath: (appPath: string) => Promise<OperationResult>
   clearCustomCursorPath: () => Promise<OperationResult>
   getCurrentCursorAppPath: () => Promise<string | null>
-  
+
   // 配置
   getConfig: () => Promise<AppConfig & { customCursorAppPath?: string | null }>
   updateConfig: (config: Partial<AppConfig>) => Promise<OperationResult>
 
   // 卡密激活（单卡密模式 - 激活新卡密会替换旧的，并直接添加账号到管理列表）
-  activateLicense: (licenseKey: string) => Promise<OperationResult & { 
-    cursorToken?: string
-    cursorEmail?: string
-    expiresAt?: string
-    remainingDays?: number
-  }>
+  activateLicense: (licenseKey: string) => Promise<
+    OperationResult & {
+      cursorToken?: string
+      cursorEmail?: string
+      expiresAt?: string
+      remainingDays?: number
+    }
+  >
   deactivateLicense: () => Promise<OperationResult>
   getLicenseStatus: () => Promise<LicenseStatus>
 }
@@ -127,6 +131,3 @@ declare global {
     }
   }
 }
-
-
-

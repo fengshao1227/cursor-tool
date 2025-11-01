@@ -171,7 +171,7 @@ ipcMain.handle('getCurrentCursorAppPath', async () => {
 ipcMain.handle('getConfig', async () => {
   const licenseExpiresAt = appDatabase.getLicenseExpiry()
   const remainingDaysStr = appDatabase.getConfig('license.remainingDays')
-  
+
   return {
     autoRestart: appDatabase.getConfig('autoRestart') === 'true',
     backupBeforeSwitch: appDatabase.getConfig('backupBeforeSwitch') === 'true',
@@ -197,7 +197,7 @@ ipcMain.handle('activateLicense', async (_evt, licenseKey: string) => {
   try {
     // 1. 调用激活接口
     const result = await licenseService.activate(licenseKey)
-    
+
     if (!result.success) {
       return { success: false, message: result.message }
     }
@@ -221,11 +221,11 @@ ipcMain.handle('activateLicense', async (_evt, licenseKey: string) => {
       appDatabase.updateAccount(existing.id, {
         accessToken: result.cursorToken,
       })
-      
-      const expiryInfo = result.expiresAt 
+
+      const expiryInfo = result.expiresAt
         ? `\n\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
         : ''
-      
+
       return {
         success: true,
         message: `✅ 卡密激活成功！\n\n账号 ${result.cursorEmail} 已存在，已更新token${expiryInfo}\n\n请在账号列表中切换使用`,
@@ -244,7 +244,7 @@ ipcMain.handle('activateLicense', async (_evt, licenseKey: string) => {
 
     appDatabase.addLog('activate_license', `Added account via license: ${result.cursorEmail}`)
 
-    const expiryInfo = result.expiresAt 
+    const expiryInfo = result.expiresAt
       ? `\n\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
       : ''
 
@@ -275,7 +275,7 @@ ipcMain.handle('deactivateLicense', async () => {
 ipcMain.handle('getLicenseStatus', async () => {
   // 实时验证卡密状态，确保卡密仍然有效
   const result = await licenseService.ensureLicensed()
-  
+
   if (result.success) {
     // 验证成功，返回状态信息
     const status = licenseService.getStatus()
@@ -284,7 +284,7 @@ ipcMain.handle('getLicenseStatus', async () => {
     // 验证失败，返回失败状态
     return {
       valid: false,
-      message: result.message || '卡密验证失败'
+      message: result.message || '卡密验证失败',
     }
   }
 })
@@ -309,7 +309,7 @@ ipcMain.handle('restoreAll', async (_, backupPath: string) => {
         message: '请先关闭Cursor再执行恢复',
       }
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 2000))
   }
 
   return await backupService.restoreAll(backupPath)
@@ -332,7 +332,7 @@ ipcMain.handle('restoreSession', async (_, backupPath: string) => {
         message: '请先关闭Cursor再执行恢复',
       }
     }
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 2000))
   }
 
   return await backupService.restoreSession(backupPath)
@@ -362,4 +362,3 @@ ipcMain.handle('deleteBackup', async (_, backupPath: string) => {
 ipcMain.handle('getLogs', async () => {
   return await accountService.getLogs(50)
 })
-

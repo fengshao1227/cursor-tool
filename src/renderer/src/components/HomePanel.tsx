@@ -9,9 +9,7 @@ export default function HomePanel() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 mb-6">
             <House size={40} weight="fill" className="text-gradient-primary" />
           </div>
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Cursor 账号管理器
-          </h1>
+          <h1 className="text-4xl font-bold text-white mb-4">Cursor 账号管理器</h1>
           <p className="text-xl text-slate-400">
             轻松管理多个 Cursor Pro 账号，快速切换，提高工作效率
           </p>
@@ -55,7 +53,7 @@ export default function HomePanel() {
         {/* 使用说明 */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-white mb-6">使用说明</h2>
-          
+
           <div className="space-y-4">
             <div className="p-5 rounded-xl glass-dark border border-white/10">
               <div className="flex items-start gap-4">
@@ -79,7 +77,8 @@ export default function HomePanel() {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white mb-2">添加账号</h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    在"账号管理"页面点击"添加账号"按钮，输入邮箱和 token 即可添加新账号。也可以点击"导入"按钮从当前 Cursor 中导入已登录的账号。
+                    在"账号管理"页面点击"添加账号"按钮，输入邮箱和 token
+                    即可添加新账号。也可以点击"导入"按钮从当前 Cursor 中导入已登录的账号。
                   </p>
                 </div>
               </div>
@@ -93,7 +92,8 @@ export default function HomePanel() {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-white mb-2">切换账号</h3>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    在账号列表中点击"切换"按钮，软件会自动关闭当前 Cursor，切换账号并重新启动 Cursor。切换过程中会保留你的工作区状态。
+                    在账号列表中点击"切换"按钮，软件会自动关闭当前 Cursor，切换账号并重新启动
+                    Cursor。切换过程中会保留你的工作区状态。
                   </p>
                 </div>
               </div>
@@ -118,7 +118,7 @@ export default function HomePanel() {
         {/* 注意事项 */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-white mb-6">注意事项</h2>
-          
+
           <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/30">
             <ul className="space-y-3 text-slate-300 text-sm">
               <li className="flex items-start gap-2">
@@ -146,4 +146,3 @@ export default function HomePanel() {
     </div>
   )
 }
-

@@ -20,9 +20,13 @@ export class DeepResetManager {
     // 根据平台设置路径
     if (process.platform === 'darwin') {
       this.cursorAppPath = '/Applications/Cursor.app'
-      this.backupBasePath = path.join(process.env.HOME!, 'Library/Application Support/Cursor/User/globalStorage/backups')
+      this.backupBasePath = path.join(
+        process.env.HOME!,
+        'Library/Application Support/Cursor/User/globalStorage/backups'
+      )
     } else if (process.platform === 'win32') {
-      const localAppData = process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE!, 'AppData', 'Local')
+      const localAppData =
+        process.env.LOCALAPPDATA || path.join(process.env.USERPROFILE!, 'AppData', 'Local')
       this.cursorAppPath = path.join(localAppData, 'Programs', 'Cursor', 'Cursor.exe')
       this.backupBasePath = path.join(cursorPaths.dataPath, 'globalStorage', 'backups')
     } else {
@@ -50,7 +54,12 @@ export class DeepResetManager {
   /**
    * 1. 修改系统UUID（需要管理员权限）
    */
-  async resetSystemUUID(): Promise<{ success: boolean; oldUUID?: string; newUUID?: string; message: string }> {
+  async resetSystemUUID(): Promise<{
+    success: boolean
+    oldUUID?: string
+    newUUID?: string
+    message: string
+  }> {
     try {
       console.log('[深度重置] 修改系统UUID...')
 
@@ -141,13 +150,16 @@ export class DeepResetManager {
   /**
    * Mac 版本的程序文件修改
    */
-  private async modifyCursorAppMac(details: string[], timestamp: string): Promise<{ success: boolean; message: string; details: string[] }> {
+  private async modifyCursorAppMac(
+    details: string[],
+    timestamp: string
+  ): Promise<{ success: boolean; message: string; details: string[] }> {
     // 1. 备份原应用
     const backupPath = path.join(this.backupBasePath, `Cursor.app.backup_${timestamp}`)
-    
+
     console.log('[深度重置] 备份原应用...')
     details.push('正在备份原应用...')
-    
+
     // 使用cp -R备份（注意：这会很慢，大约几百MB）
     try {
       execSync(`cp -R "${this.cursorAppPath}" "${backupPath}"`, { stdio: 'ignore' })
@@ -186,8 +198,14 @@ export class DeepResetManager {
 
           // 替换可能的硬编码标识符
           // 注意：这是启发式的，可能不完全准确
-          content = content.replace(/machineId["']?\s*:\s*["'][^"']{32,}["']/g, `machineId:"${randomId1}"`)
-          content = content.replace(/deviceId["']?\s*:\s*["'][^"']{32,}["']/g, `deviceId:"${randomId2}"`)
+          content = content.replace(
+            /machineId["']?\s*:\s*["'][^"']{32,}["']/g,
+            `machineId:"${randomId1}"`
+          )
+          content = content.replace(
+            /deviceId["']?\s*:\s*["'][^"']{32,}["']/g,
+            `deviceId:"${randomId2}"`
+          )
 
           // 只有内容确实改变了才写入
           if (content.length !== originalLength) {
@@ -244,11 +262,14 @@ export class DeepResetManager {
   /**
    * Windows 版本的程序文件修改
    */
-  private async modifyCursorAppWindows(details: string[], timestamp: string): Promise<{ success: boolean; message: string; details: string[] }> {
+  private async modifyCursorAppWindows(
+    details: string[],
+    timestamp: string
+  ): Promise<{ success: boolean; message: string; details: string[] }> {
     // 1. 备份原程序目录（关键文件）
     const cursorDir = path.dirname(this.cursorAppPath)
     const resourcesDir = path.join(cursorDir, 'resources', 'app')
-    
+
     if (!fs.existsSync(resourcesDir)) {
       details.push('⚠️ 未找到 Cursor 资源目录')
       return {
@@ -300,8 +321,14 @@ export class DeepResetManager {
 
           // 替换各种可能的标识符
           const patterns = [
-            { regex: /machineId["']?\s*:\s*["'][^"']{32,}["']/g, replacement: `machineId:"${randomId1}"` },
-            { regex: /deviceId["']?\s*:\s*["'][^"']{32,}["']/g, replacement: `deviceId:"${randomId2}"` },
+            {
+              regex: /machineId["']?\s*:\s*["'][^"']{32,}["']/g,
+              replacement: `machineId:"${randomId1}"`,
+            },
+            {
+              regex: /deviceId["']?\s*:\s*["'][^"']{32,}["']/g,
+              replacement: `deviceId:"${randomId2}"`,
+            },
             { regex: /sqmId["']?\s*:\s*["'][^"']{32,}["']/g, replacement: `sqmId:"${randomId3}"` },
             { regex: /telemetry\.machineId/g, replacement: `telemetry.machineId_${Date.now()}` },
           ]
@@ -353,7 +380,12 @@ export class DeepResetManager {
   /**
    * 4. Windows: 修改注册表中的 MachineGuid（需要管理员权限）
    */
-  async resetWindowsMachineGuid(): Promise<{ success: boolean; oldGuid?: string; newGuid?: string; message: string }> {
+  async resetWindowsMachineGuid(): Promise<{
+    success: boolean
+    oldGuid?: string
+    newGuid?: string
+    message: string
+  }> {
     if (process.platform !== 'win32') {
       return { success: false, message: '此功能仅适用于 Windows' }
     }
@@ -589,7 +621,7 @@ export class DeepResetManager {
       if (!backupPath) {
         const backups = fs
           .readdirSync(this.backupBasePath)
-          .filter((f) => f.startsWith('Cursor.app.backup_'))
+          .filter(f => f.startsWith('Cursor.app.backup_'))
           .sort()
           .reverse()
 
@@ -628,4 +660,3 @@ export class DeepResetManager {
 }
 
 export const deepResetManager = new DeepResetManager()
-

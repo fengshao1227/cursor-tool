@@ -8,7 +8,7 @@ export default function Logo({ size = 'md', showText = true, className = '' }: L
   const sizes = {
     sm: { icon: 32, text: 'text-sm' },
     md: { icon: 40, text: 'text-base' },
-    lg: { icon: 56, text: 'text-xl' }
+    lg: { icon: 56, text: 'text-xl' },
   }
 
   const { icon: iconSize, text: textSize } = sizes[size]
@@ -31,7 +31,7 @@ export default function Logo({ size = 'md', showText = true, className = '' }: L
               <stop offset="0%" stopColor="#4ade80" />
               <stop offset="100%" stopColor="#22d3ee" />
             </linearGradient>
-            
+
             {/* 发光滤镜 */}
             <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -53,7 +53,7 @@ export default function Logo({ size = 'md', showText = true, className = '' }: L
             className="animate-pulse"
             style={{ animationDelay: '0s', animationDuration: '3s' }}
           />
-          
+
           {/* 左下点 */}
           <circle
             cx="12"
@@ -64,7 +64,7 @@ export default function Logo({ size = 'md', showText = true, className = '' }: L
             className="animate-pulse"
             style={{ animationDelay: '1s', animationDuration: '3s' }}
           />
-          
+
           {/* 右下点 */}
           <circle
             cx="28"
@@ -75,7 +75,7 @@ export default function Logo({ size = 'md', showText = true, className = '' }: L
             className="animate-pulse"
             style={{ animationDelay: '2s', animationDuration: '3s' }}
           />
-          
+
           {/* 连接线 - 形成三角形 */}
           <path
             d="M 20 10 L 12 28 L 28 28 Z"
@@ -92,15 +92,10 @@ export default function Logo({ size = 'md', showText = true, className = '' }: L
       {/* Logo 文字 */}
       {showText && (
         <div className="flex flex-col leading-tight">
-          <span className={`font-bold text-gradient-primary ${textSize}`}>
-            Cursor
-          </span>
-          <span className={`font-medium text-gradient-primary opacity-80 ${textSize}`}>
-            Tool
-          </span>
+          <span className={`font-bold text-gradient-primary ${textSize}`}>Cursor</span>
+          <span className={`font-medium text-gradient-primary opacity-80 ${textSize}`}>Tool</span>
         </div>
       )}
     </div>
   )
 }
-

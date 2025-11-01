@@ -213,4 +213,3 @@ export class LicenseManager {
 }
 
 export const licenseManager = new LicenseManager()
-

@@ -135,7 +135,7 @@ export class AccountService {
    */
   async switchAccount(id: string): Promise<OperationResult> {
     const { backupService } = await import('./backup-service')
-    
+
     try {
       // 1. 获取目标账号
       const account = appDatabase.getAccountById(id)
@@ -170,14 +170,14 @@ export class AccountService {
             message: '无法关闭Cursor，请手动关闭后重试',
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 2000))
       }
 
       // 4. 备份当前环境（会话 + 设置 + MCP，保留工作环境）
       // 注意：这是临时备份，恢复后会自动删除，不会显示在备份管理中
       console.log('💾 备份当前环境（临时完整备份）...')
       let completeBackupPath = ''
-      
+
       try {
         // 使用新的 backupAll 方法一次性备份所有内容
         const backupResult = await backupService.backupAll('_global_session_', true)
@@ -207,7 +207,7 @@ export class AccountService {
       // 如果已恢复机器码，则跳过机器码重置部分
       console.log('🔥 执行深度重置...')
       const resetDetails: string[] = []
-      
+
       try {
         // 6.1 如果未恢复机器码，则先执行基础的出厂重置（会生成新机器码）
         if (!restoredMachineId) {
@@ -215,7 +215,7 @@ export class AccountService {
           if (factoryResetResult.success) {
             console.log('✅ 基础重置完成（已生成新机器码）')
             resetDetails.push(...factoryResetResult.details)
-            
+
             // 保存新生成的机器码到目标账号
             const newMachineId = machineIdManager.getCurrentMachineId()
             if (newMachineId) {
@@ -247,7 +247,7 @@ export class AccountService {
       }
 
       // 等待重置完成
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 2000))
 
       // 7. 恢复工作环境（会话 + 设置 + MCP）
       console.log('📂 恢复工作环境...')
@@ -287,11 +287,11 @@ export class AccountService {
       console.log('🚀 重启Cursor...')
       const autoRestart = appDatabase.getConfig('autoRestart')
       if (autoRestart === 'true') {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         await processManager.launchCursor()
       }
 
-      const machineIdInfo = restoredMachineId 
+      const machineIdInfo = restoredMachineId
         ? '\n✓ 已恢复账号的机器码'
         : '\n✓ 已生成新机器码并保存'
 
@@ -378,7 +378,7 @@ export class AccountService {
             message: '请先关闭Cursor再执行此操作',
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 2000))
       }
 
       // 2. 执行重置
@@ -413,7 +413,7 @@ export class AccountService {
             message: '请先关闭Cursor再执行此操作',
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 3000))
+        await new Promise(resolve => setTimeout(resolve, 3000))
       }
 
       // 2. 执行完整的恢复出厂设置
@@ -489,7 +489,7 @@ export class AccountService {
             message: '请先关闭Cursor再执行此操作',
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 3000))
+        await new Promise(resolve => setTimeout(resolve, 3000))
       }
 
       // 2. 执行基础重置
@@ -525,4 +525,3 @@ export class AccountService {
 }
 
 export const accountService = new AccountService()
-

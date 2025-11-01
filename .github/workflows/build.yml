@@ -16,6 +16,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          lfs: false
+      
+      - name: Configure Git for line endings
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+      
+      - name: Fix line endings (Windows only)
+        if: matrix.os == 'windows-latest'
+        run: |
+          git config core.autocrlf false
+          git add --renormalize .
+          git reset --hard HEAD || echo "No changes to reset"
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,15 +49,83 @@ jobs:
       - name: Build application
         run: npm run build
       
-      - name: Build distributable and publish
+      - name: Build distributable
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist -- --publish always
+          GH_TOKEN: ""
+        run: npm run dist -- --publish never
       
-      - name: Upload artifacts (fallback)
-        if: failure()
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.os }}
           path: release/
+          retention-days: 30
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Setup GitHub CLI
+        run: |
+          type -p curl >/dev/null || sudo apt install curl -y
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+      
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          gh release create "$TAG_NAME" \
+            --repo fengshao1227/cursor-tool \
+            --title "$TAG_NAME" \
+            --notes "自动构建发布"$'\n\n'"🎉 免费版发布"$'\n'"- 移除卡密验证功能"$'\n'"- 所有用户都可以免费使用"$'\n'"- 保留所有核心功能" \
+            --latest || echo "Release already exists"
+      
+      - name: Upload macOS files
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          if [ -d "artifacts/release-macos-latest" ]; then
+            cd artifacts/release-macos-latest
+            for file in *.dmg *.zip *.blockmap; do
+              if [ -f "$file" ]; then
+                echo "Uploading $file..."
+                gh release upload "$TAG_NAME" "$file" \
+                  --repo fengshao1227/cursor-tool \
+                  --clobber || echo "Failed to upload $file"
+              fi
+            done
+          fi
+      
+      - name: Upload Windows files
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          if [ -d "artifacts/release-windows-latest" ]; then
+            cd artifacts/release-windows-latest
+            for file in *.exe *.blockmap; do
+              if [ -f "$file" ]; then
+                echo "Uploading $file..."
+                gh release upload "$TAG_NAME" "$file" \
+                  --repo fengshao1227/cursor-tool \
+                  --clobber || echo "Failed to upload $file"
+              fi
+            done
+          fi
 

@@ -7,7 +7,7 @@ import {
   Gear,
   CaretLeft,
   CaretRight,
-  Key
+  Key,
 } from 'phosphor-react'
 import Logo from './Logo'
 
@@ -20,7 +20,12 @@ interface SidebarProps {
   className?: string
 }
 
-export default function Sidebar({ activeItem, onNavigate, onChangeLicense, className = '' }: SidebarProps) {
+export default function Sidebar({
+  activeItem,
+  onNavigate,
+  onChangeLicense,
+  className = '',
+}: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -29,7 +34,7 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
     const handleResize = () => {
       const width = window.innerWidth
       setIsMobile(width < 768)
-      
+
       if (width < 768) {
         setIsExpanded(false)
       } else if (width < 1024) {
@@ -49,13 +54,13 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
     { id: 'accounts' as NavItem, icon: UsersThree, label: '账号管理' },
     { id: 'tools' as NavItem, icon: Wrench, label: '系统工具' },
     { id: 'backup' as NavItem, icon: Database, label: '备份管理' },
-    { id: 'settings' as NavItem, icon: Gear, label: '设置' }
+    { id: 'settings' as NavItem, icon: Gear, label: '设置' },
   ]
 
-  const sidebarClass = isExpanded 
-    ? 'sidebar-expanded' 
-    : isMobile 
-      ? 'sidebar-hidden' 
+  const sidebarClass = isExpanded
+    ? 'sidebar-expanded'
+    : isMobile
+      ? 'sidebar-hidden'
       : 'sidebar-collapsed'
 
   return (
@@ -71,16 +76,12 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
     >
       {/* Logo 区域 */}
       <div className="p-6 border-b border-white/10 no-drag-region">
-        <Logo 
-          size={isExpanded ? 'md' : 'sm'} 
-          showText={isExpanded}
-          className="justify-center"
-        />
+        <Logo size={isExpanded ? 'md' : 'sm'} showText={isExpanded} className="justify-center" />
       </div>
 
       {/* 导航项 */}
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide">
-        {navItems.map((item) => {
+        {navItems.map(item => {
           const Icon = item.icon
           const isActive = activeItem === item.id
 
@@ -94,9 +95,10 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
                 transition-all duration-300
                 group relative
                 no-drag-region
-                ${isActive
-                  ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ${
+                  isActive
+                    ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }
                 ${!isExpanded && 'justify-center'}
               `}
@@ -120,18 +122,22 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
 
               {/* 标签文字 */}
               {isExpanded && (
-                <span className={`
+                <span
+                  className={`
                   font-medium text-sm transition-all duration-300
                   ${isActive ? 'text-white' : ''}
-                `}>
+                `}
+                >
                   {item.label}
                 </span>
               )}
 
               {/* 活动发光效果 */}
               {isActive && (
-                <span className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ boxShadow: 'inset 0 0 20px rgba(74, 222, 128, 0.1)' }} />
+                <span
+                  className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{ boxShadow: 'inset 0 0 20px rgba(74, 222, 128, 0.1)' }}
+                />
               )}
             </button>
           )
@@ -160,11 +166,7 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
               weight="bold"
               className="flex-shrink-0 transition-all duration-300 group-hover:scale-110"
             />
-            {isExpanded && (
-              <span className="font-medium text-sm">
-                更换卡密
-              </span>
-            )}
+            {isExpanded && <span className="font-medium text-sm">更换卡密</span>}
           </button>
         </div>
       )}
@@ -186,11 +188,19 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
           >
             {isExpanded ? (
               <>
-                <CaretLeft size={20} weight="bold" className="group-hover:-translate-x-1 transition-transform" />
+                <CaretLeft
+                  size={20}
+                  weight="bold"
+                  className="group-hover:-translate-x-1 transition-transform"
+                />
                 <span className="text-sm font-medium">收起</span>
               </>
             ) : (
-              <CaretRight size={20} weight="bold" className="group-hover:translate-x-1 transition-transform" />
+              <CaretRight
+                size={20}
+                weight="bold"
+                className="group-hover:translate-x-1 transition-transform"
+              />
             )}
           </button>
         </div>
@@ -198,14 +208,10 @@ export default function Sidebar({ activeItem, onNavigate, onChangeLicense, class
 
       {/* 移动端遮罩 */}
       {isMobile && isExpanded && (
-        <div
-          className="fixed inset-0 bg-black/50 z-[-1]"
-          onClick={() => setIsExpanded(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-[-1]" onClick={() => setIsExpanded(false)} />
       )}
     </div>
   )
 }
 
 export type { NavItem }
-

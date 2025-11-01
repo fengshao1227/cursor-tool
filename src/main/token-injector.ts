@@ -11,12 +11,7 @@ export class TokenInjector {
   private dbPath: string
 
   constructor() {
-    this.dbPath = path.join(
-      cursorPaths.dataPath,
-      'User',
-      'globalStorage',
-      'state.vscdb'
-    )
+    this.dbPath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'state.vscdb')
   }
 
   /**
@@ -133,9 +128,9 @@ export class TokenInjector {
       const db = new Database(this.dbPath, { readonly: true })
 
       const getData = (key: string): string | undefined => {
-        const result = db
-          .prepare('SELECT value FROM ItemTable WHERE key = ?')
-          .get(key) as { value: string } | undefined
+        const result = db.prepare('SELECT value FROM ItemTable WHERE key = ?').get(key) as
+          | { value: string }
+          | undefined
         return result?.value
       }
 
@@ -215,4 +210,3 @@ export class TokenInjector {
 }
 
 export const tokenInjector = new TokenInjector()
-

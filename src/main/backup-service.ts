@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as os from 'os'
 import { cursorPaths } from './cursor-paths'
 import { appDatabase } from './database'
 
@@ -74,14 +75,9 @@ export class BackupService {
       const itemsToBak: { name: string; source: string; success: boolean }[] = []
 
       // === 会话数据备份 ===
-      
+
       // 1. 备份 state.vscdb（包含会话状态）
-      const stateDbPath = path.join(
-        cursorPaths.dataPath,
-        'User',
-        'globalStorage',
-        'state.vscdb'
-      )
+      const stateDbPath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'state.vscdb')
       if (fs.existsSync(stateDbPath)) {
         fs.copyFileSync(stateDbPath, path.join(backupPath, 'state.vscdb'))
         itemsToBak.push({ name: 'state.vscdb', source: stateDbPath, success: true })
@@ -196,7 +192,7 @@ export class BackupService {
       }
 
       // 14. 备份可能的 .cursor-mcp 配置
-      const homeMcpPath = path.join(require('os').homedir(), '.cursor-mcp')
+      const homeMcpPath = path.join(os.homedir(), '.cursor-mcp')
       if (fs.existsSync(homeMcpPath)) {
         const targetHomeMcp = path.join(backupPath, 'cursor-mcp')
         this.copyFolderRecursive(homeMcpPath, targetHomeMcp)
@@ -209,12 +205,12 @@ export class BackupService {
         try {
           const settingsContent = fs.readFileSync(settingsPath, 'utf-8')
           const settings = JSON.parse(settingsContent)
-          
+
           // 如果有 MCP 服务器配置，记录一下
           if (settings['mcp.servers'] || settings['mcpServers']) {
             const mcpInfo = {
               hasMcpConfig: true,
-              servers: settings['mcp.servers'] || settings['mcpServers']
+              servers: settings['mcp.servers'] || settings['mcpServers'],
             }
             fs.writeFileSync(
               path.join(backupPath, 'mcp-info.json'),
@@ -236,10 +232,7 @@ export class BackupService {
         cursorVersion: 'unknown',
         temporary: temporary,
       }
-      fs.writeFileSync(
-        path.join(backupPath, 'metadata.json'),
-        JSON.stringify(metadata, null, 2)
-      )
+      fs.writeFileSync(path.join(backupPath, 'metadata.json'), JSON.stringify(metadata, null, 2))
 
       // 记录到数据库（仅非临时备份才记录）
       if (!temporary) {
@@ -287,12 +280,7 @@ export class BackupService {
       const itemsToBak: { name: string; source: string; success: boolean }[] = []
 
       // 1. 备份 state.vscdb（包含会话状态）
-      const stateDbPath = path.join(
-        cursorPaths.dataPath,
-        'User',
-        'globalStorage',
-        'state.vscdb'
-      )
+      const stateDbPath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'state.vscdb')
       if (fs.existsSync(stateDbPath)) {
         fs.copyFileSync(stateDbPath, path.join(backupPath, 'state.vscdb'))
         itemsToBak.push({ name: 'state.vscdb', source: stateDbPath, success: true })
@@ -361,10 +349,7 @@ export class BackupService {
         cursorVersion: 'unknown',
         temporary: temporary, // 标记是否为临时备份
       }
-      fs.writeFileSync(
-        path.join(backupPath, 'metadata.json'),
-        JSON.stringify(metadata, null, 2)
-      )
+      fs.writeFileSync(path.join(backupPath, 'metadata.json'), JSON.stringify(metadata, null, 2))
 
       // 记录到数据库（仅非临时备份才记录）
       if (!temporary) {
@@ -452,10 +437,7 @@ export class BackupService {
         items: itemsToBak,
         temporary: temporary, // 标记是否为临时备份
       }
-      fs.writeFileSync(
-        path.join(backupPath, 'metadata.json'),
-        JSON.stringify(metadata, null, 2)
-      )
+      fs.writeFileSync(path.join(backupPath, 'metadata.json'), JSON.stringify(metadata, null, 2))
 
       // 记录到数据库（仅非临时备份才记录）
       if (!temporary) {
@@ -510,12 +492,7 @@ export class BackupService {
       // 1. 恢复 state.vscdb
       const stateDbBackup = path.join(backupPath, 'state.vscdb')
       if (fs.existsSync(stateDbBackup)) {
-        const stateDbPath = path.join(
-          cursorPaths.dataPath,
-          'User',
-          'globalStorage',
-          'state.vscdb'
-        )
+        const stateDbPath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'state.vscdb')
         if (fs.existsSync(stateDbPath)) {
           fs.copyFileSync(stateDbPath, stateDbPath + '.before-restore')
         }
@@ -526,12 +503,7 @@ export class BackupService {
       // 2. 恢复 storage.json
       const storageBackup = path.join(backupPath, 'storage.json')
       if (fs.existsSync(storageBackup)) {
-        const storagePath = path.join(
-          cursorPaths.dataPath,
-          'User',
-          'globalStorage',
-          'storage.json'
-        )
+        const storagePath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'storage.json')
         if (fs.existsSync(storagePath)) {
           fs.copyFileSync(storagePath, storagePath + '.before-restore')
         }
@@ -661,7 +633,7 @@ export class BackupService {
       // 13. 恢复 .cursor-mcp 配置
       const homeMcpBackup = path.join(backupPath, 'cursor-mcp')
       if (fs.existsSync(homeMcpBackup)) {
-        const homeMcpPath = path.join(require('os').homedir(), '.cursor-mcp')
+        const homeMcpPath = path.join(os.homedir(), '.cursor-mcp')
         if (fs.existsSync(homeMcpPath)) {
           fs.rmSync(homeMcpPath, { recursive: true, force: true })
         }
@@ -713,12 +685,7 @@ export class BackupService {
       // 1. 恢复 state.vscdb
       const stateDbBackup = path.join(backupPath, 'state.vscdb')
       if (fs.existsSync(stateDbBackup)) {
-        const stateDbPath = path.join(
-          cursorPaths.dataPath,
-          'User',
-          'globalStorage',
-          'state.vscdb'
-        )
+        const stateDbPath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'state.vscdb')
         // 先备份当前的
         if (fs.existsSync(stateDbPath)) {
           fs.copyFileSync(stateDbPath, stateDbPath + '.before-restore')
@@ -730,12 +697,7 @@ export class BackupService {
       // 2. 恢复 storage.json
       const storageBackup = path.join(backupPath, 'storage.json')
       if (fs.existsSync(storageBackup)) {
-        const storagePath = path.join(
-          cursorPaths.dataPath,
-          'User',
-          'globalStorage',
-          'storage.json'
-        )
+        const storagePath = path.join(cursorPaths.dataPath, 'User', 'globalStorage', 'storage.json')
         if (fs.existsSync(storagePath)) {
           fs.copyFileSync(storagePath, storagePath + '.before-restore')
         }
@@ -978,4 +940,3 @@ export class BackupService {
 }
 
 export const backupService = new BackupService()
-

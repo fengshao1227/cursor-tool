@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { LicenseStatus } from '../../../shared/types'
 
-export default function LicenseModal({ 
-  onClose, 
+export default function LicenseModal({
+  onClose,
   required = false,
   onAccountAdded,
-  onActivationSuccess
-}: { 
+  onActivationSuccess,
+}: {
   onClose: () => void
   required?: boolean
   onAccountAdded?: () => void
@@ -35,26 +35,26 @@ export default function LicenseModal({
     try {
       // 激活卡密，会自动添加到账号列表
       const res = await window.api.activateLicense(licenseKey)
-      
+
       if (res.success) {
         alert(res.message)
-        
+
         // 重新加载许可证状态
         await load()
-        
+
         // 通知父组件刷新账号列表
         if (onAccountAdded) {
           onAccountAdded()
         }
-        
+
         // 通知父组件激活成功（用于取消 required 状态）
         if (onActivationSuccess) {
           onActivationSuccess()
         }
-        
+
         // 清空输入框
         setLicenseKey('')
-        
+
         // 如果不是必需模式，延迟关闭以显示更新后的状态
         if (!required) {
           setTimeout(() => {
@@ -92,8 +92,8 @@ export default function LicenseModal({
             {required ? '🔐 请输入卡密激活软件' : '更换卡密'}
           </h3>
           {!required && (
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full p-1 transition-colors"
               aria-label="关闭"
             >
@@ -110,15 +110,13 @@ export default function LicenseModal({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              卡密
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">卡密</label>
             <input
               placeholder="请输入卡密"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={licenseKey}
-              onChange={(e) => setLicenseKey(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleActivate()}
+              onChange={e => setLicenseKey(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleActivate()}
               autoFocus
             />
           </div>
@@ -135,7 +133,7 @@ export default function LicenseModal({
             >
               {loading ? '激活中...' : '激活卡密'}
             </button>
-            
+
             {!required && (
               <button
                 onClick={onClose}
@@ -145,11 +143,8 @@ export default function LicenseModal({
               </button>
             )}
           </div>
-
         </div>
       </div>
     </div>
   )
 }
-
-
