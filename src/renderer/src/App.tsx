@@ -28,6 +28,7 @@ function App() {
   const [cursorPathSearching, setCursorPathSearching] = useState(false)
   const [announcement, setAnnouncement] = useState<Announcement | null>(null)
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
+  const [announcementChecked, setAnnouncementChecked] = useState(false)
 
   // 检测平台
   useEffect(() => {
@@ -40,17 +41,30 @@ function App() {
     }
   }, [])
 
-  // 检查在线公告（最高优先级）
+  // 检查在线公告（最高优先级，阻塞其他操作）
   const checkAnnouncement = async () => {
     try {
       const data = await window.api.getAnnouncement()
       if (data) {
         setAnnouncement(data)
         setShowAnnouncementModal(true)
+        // 不设置 announcementChecked，等用户关闭公告后再继续
+      } else {
+        // 没有公告，继续后续流程
+        setAnnouncementChecked(true)
       }
     } catch (error) {
       console.error('获取公告失败:', error)
+      // 出错也继续后续流程
+      setAnnouncementChecked(true)
     }
+  }
+  
+  // 公告关闭后，开始初始化其他内容
+  const handleAnnouncementClose = () => {
+    setShowAnnouncementModal(false)
+    setAnnouncement(null)
+    setAnnouncementChecked(true)
   }
 
   // 检查卡密有效期（改用新逻辑）
@@ -131,10 +145,17 @@ function App() {
     }
   }
 
+  // 首次启动时只检查公告
   useEffect(() => {
-    checkAnnouncement() // 最优先：检查在线公告
-    checkCursorPath()   // 其次：检查Cursor路径
-    checkLicense()      // 再次：检查许可证
+    checkAnnouncement()
+  }, [])
+  
+  // 公告检查完成后，再初始化其他内容
+  useEffect(() => {
+    if (!announcementChecked) return
+    
+    checkCursorPath()
+    checkLicense()
     loadData()
 
     // 定时刷新Cursor运行状态
@@ -143,16 +164,10 @@ function App() {
       setIsCursorRunning(running)
     }, 3000)
 
-    // 每30分钟自动检查公告
-    const announcementInterval = setInterval(() => {
-      checkAnnouncement()
-    }, 30 * 60 * 1000)
-
     return () => {
       clearInterval(interval)
-      clearInterval(announcementInterval)
     }
-  }, [])
+  }, [announcementChecked])
 
   const handleAddAccount = async (
     email: string,
@@ -391,19 +406,16 @@ function App() {
         />
       )}
 
-      {/* 在线公告弹窗 - 最高优先级 */}
+      {/* 在线公告弹窗 - 最高优先级，阻塞其他弹窗 */}
       {showAnnouncementModal && announcement && (
         <AnnouncementModal
           announcement={announcement}
-          onClose={() => {
-            setShowAnnouncementModal(false)
-            setAnnouncement(null)
-          }}
+          onClose={handleAnnouncementClose}
         />
       )}
 
-      {/* 许可证弹窗 */}
-      {isLicenseModalOpen && (
+      {/* 许可证弹窗 - 只在公告检查完成后显示 */}
+      {announcementChecked && isLicenseModalOpen && (
         <LicenseModal
           onClose={() => {
             setIsLicenseModalOpen(false)

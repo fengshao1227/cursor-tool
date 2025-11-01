@@ -116,13 +116,6 @@ export class AnnouncementService {
         return null
       }
       
-      // 检查是否已被用户关闭
-      const dismissedIds = this.getDismissedAnnouncements()
-      if (dismissedIds.includes(announcement.id)) {
-        console.log('📢 公告已被用户关闭')
-        return null
-      }
-      
       // 缓存最新公告
       setConfig('announcement.latest', JSON.stringify(announcement))
       setConfig('announcement.lastFetch', new Date().toISOString())
@@ -137,12 +130,8 @@ export class AnnouncementService {
       if (cached) {
         try {
           const announcement = JSON.parse(cached)
-          // 检查缓存的公告是否已被关闭
-          const dismissedIds = this.getDismissedAnnouncements()
-          if (!dismissedIds.includes(announcement.id)) {
-            console.log('📢 返回缓存的公告')
-            return announcement
-          }
+          console.log('📢 返回缓存的公告')
+          return announcement
         } catch (parseError) {
           console.warn('📢 解析缓存公告失败')
         }
