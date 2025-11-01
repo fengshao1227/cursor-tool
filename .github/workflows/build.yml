@@ -79,6 +79,32 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取所有 tag 信息
+          token: ${{ secrets.GH_TOKEN }}
+      
+      - name: Get tag name
+        id: get_tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # 从 tag push 触发
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+          else
+            # 从 workflow_dispatch 触发，获取最新的 tag
+            TAG_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -z "$TAG_NAME" ]; then
+              # 如果没有 tag，使用版本号创建新 tag
+              VERSION=$(node -p "require('./package.json').version")
+              TAG_NAME="v${VERSION}"
+              echo "创建新 tag: $TAG_NAME"
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git tag "$TAG_NAME" || echo "Tag already exists"
+              git push origin "$TAG_NAME" || echo "Tag push failed"
+            fi
+          fi
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "使用的 tag: $TAG_NAME"
       
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -94,45 +120,68 @@ jobs:
           sudo apt update
           sudo apt install gh -y
       
-      - name: Create Release
+      - name: Authenticate GitHub CLI
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          gh release create "$TAG_NAME" \
-            --repo fengshao1227/cursor-tool \
-            --title "$TAG_NAME" \
-            --notes "自动构建发布"$'\n\n'"🎉 免费版发布"$'\n'"- 移除卡密验证功能"$'\n'"- 所有用户都可以免费使用"$'\n'"- 保留所有核心功能" \
-            --latest || echo "Release already exists"
+          echo "$GH_TOKEN" | gh auth login --with-token
+      
+      - name: Create or Update Release
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
+          echo "创建或更新 Release: $TAG_NAME"
+          
+          # 检查 release 是否已存在
+          if gh release view "$TAG_NAME" --repo fengshao1227/cursor-tool &>/dev/null; then
+            echo "Release $TAG_NAME 已存在，更新中..."
+            gh release edit "$TAG_NAME" \
+              --repo fengshao1227/cursor-tool \
+              --title "$TAG_NAME" \
+              --notes "自动构建发布（无验证版本）"$'\n\n'"🎉 免费版发布"$'\n'"- 无代码签名验证"$'\n'"- 支持 macOS 和 Windows"$'\n'"- 所有用户都可以免费使用"$'\n'"- 保留所有核心功能" \
+              --latest || echo "更新 Release 失败"
+          else
+            echo "创建新 Release: $TAG_NAME"
+            gh release create "$TAG_NAME" \
+              --repo fengshao1227/cursor-tool \
+              --title "$TAG_NAME" \
+              --notes "自动构建发布（无验证版本）"$'\n\n'"🎉 免费版发布"$'\n'"- 无代码签名验证"$'\n'"- 支持 macOS 和 Windows"$'\n'"- 所有用户都可以免费使用"$'\n'"- 保留所有核心功能" \
+              --latest || echo "创建 Release 失败"
+          fi
       
       - name: Upload macOS files
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
+          echo "上传 macOS 文件到 Release: $TAG_NAME"
           if [ -d "artifacts/release-macos-latest" ]; then
             cd artifacts/release-macos-latest
             for file in *.dmg *.zip *.blockmap; do
               if [ -f "$file" ]; then
-                echo "Uploading $file..."
+                echo "Uploading macOS: $file..."
                 gh release upload "$TAG_NAME" "$file" \
                   --repo fengshao1227/cursor-tool \
                   --clobber || echo "Failed to upload $file"
               fi
             done
+          else
+            echo "警告: macOS 构建产物目录不存在"
           fi
       
       - name: Upload Windows files
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
+          echo "上传 Windows 文件到 Release: $TAG_NAME"
           if [ -d "artifacts/release-windows-latest" ]; then
             cd artifacts/release-windows-latest
             # 上传所有 .exe 和 .blockmap 文件（包括 portable 格式）
             for file in *.exe *.blockmap; do
               if [ -f "$file" ]; then
-                echo "Uploading $file..."
+                echo "Uploading Windows: $file..."
                 gh release upload "$TAG_NAME" "$file" \
                   --repo fengshao1227/cursor-tool \
                   --clobber || echo "Failed to upload $file"
@@ -140,9 +189,19 @@ jobs:
             done
             # 如果没有找到文件，尝试查找 release 目录下的所有文件
             if [ -z "$(ls -A *.exe *.blockmap 2>/dev/null)" ]; then
-              echo "查找所有构建产物..."
+              echo "查找所有 Windows 构建产物..."
               find . -type f \( -name "*.exe" -o -name "*.blockmap" \) -exec echo "Found: {}" \;
               find . -type f \( -name "*.exe" -o -name "*.blockmap" \) -exec gh release upload "$TAG_NAME" {} --repo fengshao1227/cursor-tool --clobber \;
             fi
+          else
+            echo "警告: Windows 构建产物目录不存在"
           fi
+      
+      - name: List uploaded files
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
+          echo "Release $TAG_NAME 中的文件:"
+          gh release view "$TAG_NAME" --repo fengshao1227/cursor-tool || echo "Release not found"
 
