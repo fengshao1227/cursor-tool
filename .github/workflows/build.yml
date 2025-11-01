@@ -49,10 +49,20 @@ jobs:
       - name: Build application
         run: npm run build
       
-      - name: Build distributable
+      - name: Build distributable (macOS)
+        if: matrix.os == 'macos-latest'
         env:
           GH_TOKEN: ""
-        run: npm run dist -- --publish never
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npm run dist:mac -- --publish never
+        
+      - name: Build distributable (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          GH_TOKEN: ""
+          WIN_CSC_LINK: ""
+          WIN_CSC_KEY_PASSWORD: ""
+        run: npm run dist:win -- --publish never
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -119,6 +129,7 @@ jobs:
           TAG_NAME=${GITHUB_REF#refs/tags/}
           if [ -d "artifacts/release-windows-latest" ]; then
             cd artifacts/release-windows-latest
+            # 上传所有 .exe 和 .blockmap 文件（包括 portable 格式）
             for file in *.exe *.blockmap; do
               if [ -f "$file" ]; then
                 echo "Uploading $file..."
@@ -127,5 +138,11 @@ jobs:
                   --clobber || echo "Failed to upload $file"
               fi
             done
+            # 如果没有找到文件，尝试查找 release 目录下的所有文件
+            if [ -z "$(ls -A *.exe *.blockmap 2>/dev/null)" ]; then
+              echo "查找所有构建产物..."
+              find . -type f \( -name "*.exe" -o -name "*.blockmap" \) -exec echo "Found: {}" \;
+              find . -type f \( -name "*.exe" -o -name "*.blockmap" \) -exec gh release upload "$TAG_NAME" {} --repo fengshao1227/cursor-tool --clobber \;
+            fi
           fi
 

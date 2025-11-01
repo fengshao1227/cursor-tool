@@ -86,12 +86,14 @@
         "dmg",
         "zip"
       ],
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "identity": null
     },
     "win": {
       "target": [
         "portable"
-      ]
+      ],
+      "sign": null
     },
     "nsis": {
       "oneClick": false,
