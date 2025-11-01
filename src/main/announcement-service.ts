@@ -142,37 +142,11 @@ export class AnnouncementService {
   }
   
   /**
-   * 关闭公告（记录已关闭的公告ID）
+   * 关闭公告（不再记录关闭状态，每次启动都显示）
    */
   dismissAnnouncement(announcementId: string): void {
-    const dismissedIds = this.getDismissedAnnouncements()
-    if (!dismissedIds.includes(announcementId)) {
-      dismissedIds.push(announcementId)
-      setConfig('announcement.dismissed', JSON.stringify(dismissedIds))
-      console.log(`📢 已关闭公告: ${announcementId}`)
-    }
-  }
-  
-  /**
-   * 获取已关闭的公告ID列表
-   */
-  private getDismissedAnnouncements(): string[] {
-    const dismissed = getConfig('announcement.dismissed')
-    if (!dismissed) return []
-    
-    try {
-      return JSON.parse(dismissed)
-    } catch {
-      return []
-    }
-  }
-  
-  /**
-   * 清除已关闭的公告记录（用于测试或重置）
-   */
-  clearDismissedAnnouncements(): void {
-    setConfig('announcement.dismissed', '[]')
-    console.log('📢 已清除所有已关闭的公告记录')
+    // 不再记录关闭状态，确保每次启动都会显示公告
+    console.log(`📢 用户关闭了公告: ${announcementId}`)
   }
   
   /**
