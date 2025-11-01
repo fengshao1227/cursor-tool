@@ -93,7 +93,9 @@
       "target": [
         "portable"
       ],
-      "sign": null
+      "sign": null,
+      "signingHashAlgorithms": [],
+      "signDlls": false
     },
     "nsis": {
       "oneClick": false,

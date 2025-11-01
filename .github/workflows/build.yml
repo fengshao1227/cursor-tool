@@ -60,9 +60,15 @@ jobs:
         if: matrix.os == 'windows-latest'
         env:
           GH_TOKEN: ""
-          WIN_CSC_LINK: ""
-          WIN_CSC_KEY_PASSWORD: ""
-        run: npm run dist:win -- --publish never
+          # 跳过 Windows 代码签名
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: |
+          # 明确取消设置签名相关环境变量
+          $env:WIN_CSC_LINK = $null
+          $env:WIN_CSC_KEY_PASSWORD = $null
+          $env:CSC_LINK = $null
+          $env:CSC_KEY_PASSWORD = $null
+          npm run dist:win -- --publish never
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
