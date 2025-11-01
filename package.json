@@ -102,11 +102,6 @@
     "electronDownload": {
       "mirror": "https://npmmirror.com/mirrors/electron/"
     },
-    "npmRebuild": true,
-    "publish": {
-      "provider": "github",
-      "owner": "fengshao1227",
-      "repo": "cursor-tool"
-    }
+    "npmRebuild": true
   }
 }

@@ -6,7 +6,7 @@ import pkg from '../../package.json'
 import { appDatabase } from './database'
 import { machineIdManager } from './machine-id'
 // 动态导入配置以避免循环依赖
-import { getConfig as getAppConfig } from './config'
+import { getConfig as getAppConfig, isLicenseCheckEnabled } from './config'
 import { logger } from './logger'
 
 type VerifyResponse = {
@@ -350,6 +350,11 @@ export class LicenseService {
   }
 
   getStatus(): { valid: boolean; message?: string; expiresAt?: string; notAfter?: string } {
+    // 如果禁用了卡密验证，直接返回有效状态
+    if (!isLicenseCheckEnabled()) {
+      return { valid: true, expiresAt: undefined, notAfter: undefined }
+    }
+    
     try {
       const receiptStr = getConfig('license.receipt')
       const sig = getConfig('license.signature') || ''
@@ -369,6 +374,11 @@ export class LicenseService {
   }
 
   async ensureLicensed(): Promise<{ success: boolean; message?: string }> {
+    // 检查是否启用卡密验证
+    if (!isLicenseCheckEnabled()) {
+      return { success: true, message: '免费版：无需验证' }
+    }
+    
     // 优先在线验证，确保卡密仍然有效
     try {
       const online = await this.verifyOnline()

@@ -1,7 +1,9 @@
+// 最优先：在导入任何模块之前加载环境变量
+import dotenv from 'dotenv'
+dotenv.config()
+
 import { app, BrowserWindow, ipcMain } from 'electron'
 import * as path from 'path'
-// 在应用启动时加载环境变量
-import dotenv from 'dotenv'
 import { accountService } from './account-service'
 import { appDatabase } from './database'
 import { cursorPaths } from './cursor-paths'
@@ -47,9 +49,6 @@ function createWindow(): void {
     mainWindow = null
   })
 }
-
-// 加载环境变量（在应用启动前）
-dotenv.config()
 
 // 应用准备就绪
 app.whenReady().then(() => {
