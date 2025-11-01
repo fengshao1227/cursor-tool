@@ -49,10 +49,28 @@ export interface License {
   licenseKey: string
   nickname?: string
   cursorEmail?: string
-  cursorToken?: string
+  cursorToken?: string  // 保留兼容单token
+  cursorTokens?: string[]  // 支持多token
   expiresAt?: string
   isCurrent: boolean
   status: 'pending' | 'active' | 'expired' | 'error'
+  createdAt: string
+  updatedAt: string
+}
+
+// 在线公告
+export interface Announcement {
+  id: string
+  title: string
+  content: string
+  type: 'info' | 'warning' | 'error' | 'success'
+  priority: number
+  platforms?: string[]
+  startTime?: string
+  endTime?: string
+  dismissible: boolean
+  autoShow: boolean
+  url?: string
   createdAt: string
   updatedAt: string
 }
@@ -107,13 +125,19 @@ export interface IpcApi {
 
   // 卡密激活（单卡密模式 - 激活新卡密会替换旧的，并直接添加账号到管理列表）
   activateLicense: (licenseKey: string) => Promise<OperationResult & { 
-    cursorToken?: string
+    cursorToken?: string  // 兼容单token
+    cursorTokens?: string[]  // 支持多token
     cursorEmail?: string
     expiresAt?: string
     remainingDays?: number
+    accountCount?: number  // 返回创建的账号数量
   }>
   deactivateLicense: () => Promise<OperationResult>
   getLicenseStatus: () => Promise<LicenseStatus>
+  
+  // 在线公告
+  getAnnouncement: () => Promise<Announcement | null>
+  dismissAnnouncement: (announcementId: string) => Promise<OperationResult>
 }
 
 declare global {

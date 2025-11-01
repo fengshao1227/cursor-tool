@@ -3,7 +3,10 @@ import { tokenInjector } from './token-injector'
 import { processManager } from './process-manager'
 import { machineIdManager } from './machine-id'
 import { deepResetManager } from './deep-reset'
+import { cursorPaths } from './cursor-paths'
 import { Account, OperationResult } from '../shared/types'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * 账号管理服务
@@ -203,18 +206,18 @@ export class AccountService {
         }
       }
 
-      // 6. 深度重置Cursor（包括修改程序文件、清除DNS等）
-      // 如果已恢复机器码，则跳过机器码重置部分
-      console.log('🔥 执行深度重置...')
+      // 6. 重置机器码和认证信息（但不删除会话数据）
+      console.log('🔄 重置机器码和认证信息...')
       const resetDetails: string[] = []
       
       try {
-        // 6.1 如果未恢复机器码，则先执行基础的出厂重置（会生成新机器码）
+        // 6.1 如果未恢复机器码，则生成新机器码
         if (!restoredMachineId) {
-          const factoryResetResult = await machineIdManager.factoryReset()
-          if (factoryResetResult.success) {
-            console.log('✅ 基础重置完成（已生成新机器码）')
-            resetDetails.push(...factoryResetResult.details)
+          // 只重置机器码，不删除会话数据
+          const resetResult = machineIdManager.resetMachineId()
+          if (resetResult.success) {
+            console.log('✅ 机器码重置完成')
+            resetDetails.push(`✅ 已生成新机器码: ${resetResult.newMachineId?.substring(0, 20)}...`)
             
             // 保存新生成的机器码到目标账号
             const newMachineId = machineIdManager.getCurrentMachineId()
@@ -225,8 +228,29 @@ export class AccountService {
               console.log(`✅ 已保存新机器码到账号 ${account.email}`)
             }
           }
+          
+          // 清除认证相关文件（但保留会话数据）
+          console.log('🧹 清除认证信息...')
+          const authFiles = [
+            path.join(cursorPaths.dataPath, 'Cookies'),
+            path.join(cursorPaths.dataPath, 'Cookies-journal'),
+            path.join(cursorPaths.dataPath, 'Network Persistent State'),
+            path.join(cursorPaths.dataPath, 'TransportSecurity'),
+          ]
+          
+          for (const filePath of authFiles) {
+            try {
+              if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath)
+                console.log(`✅ 已删除: ${path.basename(filePath)}`)
+                resetDetails.push(`✅ 已删除认证文件: ${path.basename(filePath)}`)
+              }
+            } catch (err) {
+              console.warn(`⚠️ 删除失败: ${filePath}`)
+            }
+          }
         } else {
-          // 如果已恢复机器码，只执行清理操作，不重置机器码
+          // 如果已恢复机器码，只执行清理操作
           console.log('⏭️ 跳过机器码重置（已恢复账号的机器码）')
           resetDetails.push('✅ 已恢复账号的机器码，跳过重置')
         }
@@ -249,13 +273,14 @@ export class AccountService {
       // 等待重置完成
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
-      // 7. 恢复工作环境（会话 + 设置 + MCP）
+      // 7. 恢复工作环境（会话 + 设置 + MCP，但跳过认证文件）
       console.log('📂 恢复工作环境...')
       try {
         if (completeBackupPath) {
-          const restoreResult = await backupService.restoreAll(completeBackupPath)
+          // 跳过恢复认证文件（Cookies等），因为要使用新账号的认证
+          const restoreResult = await backupService.restoreAll(completeBackupPath, true)
           if (restoreResult.success) {
-            console.log('✅ 完整环境恢复成功（包括会话、设置和MCP）')
+            console.log('✅ 完整环境恢复成功（包括会话、设置和MCP，使用新账号认证）')
             // 恢复完成后删除临时备份
             backupService.deleteBackup(completeBackupPath)
             console.log('🗑️ 已清理临时备份')

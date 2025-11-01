@@ -82,6 +82,7 @@ export class AppDatabase {
         nickname TEXT,
         cursor_email TEXT,
         cursor_token TEXT,
+        cursor_tokens TEXT,
         expires_at TEXT,
         is_current INTEGER DEFAULT 0,
         status TEXT DEFAULT 'pending',
@@ -89,6 +90,16 @@ export class AppDatabase {
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `)
+    
+    // 如果表已存在但没有 cursor_tokens 字段，添加该字段
+    try {
+      this.db.exec(`ALTER TABLE licenses ADD COLUMN cursor_tokens TEXT`)
+    } catch (e: any) {
+      // 字段已存在或其他错误，忽略
+      if (!e.message.includes('duplicate column')) {
+        console.warn('Failed to add cursor_tokens column:', e.message)
+      }
+    }
   }
 
   /**
@@ -401,7 +412,7 @@ export class AppDatabase {
     return this.db
       .prepare(
         `SELECT id, license_key as licenseKey, nickname, cursor_email as cursorEmail,
-         cursor_token as cursorToken, expires_at as expiresAt, is_current as isCurrent,
+         cursor_token as cursorToken, cursor_tokens as cursorTokensRaw, expires_at as expiresAt, is_current as isCurrent,
          status, created_at as createdAt, updated_at as updatedAt
          FROM licenses ORDER BY created_at DESC`
       )
@@ -409,6 +420,8 @@ export class AppDatabase {
       .map((row: any) => ({
         ...row,
         isCurrent: Boolean(row.isCurrent),
+        cursorTokens: row.cursorTokensRaw ? JSON.parse(row.cursorTokensRaw) : undefined,
+        cursorTokensRaw: undefined,  // 移除原始字段
       }))
   }
 
@@ -419,7 +432,7 @@ export class AppDatabase {
     const row = this.db
       .prepare(
         `SELECT id, license_key as licenseKey, nickname, cursor_email as cursorEmail,
-         cursor_token as cursorToken, expires_at as expiresAt, is_current as isCurrent,
+         cursor_token as cursorToken, cursor_tokens as cursorTokensRaw, expires_at as expiresAt, is_current as isCurrent,
          status, created_at as createdAt, updated_at as updatedAt
          FROM licenses WHERE id = ?`
       )
@@ -430,6 +443,8 @@ export class AppDatabase {
     return {
       ...row,
       isCurrent: Boolean(row.isCurrent),
+      cursorTokens: row.cursorTokensRaw ? JSON.parse(row.cursorTokensRaw) : undefined,
+      cursorTokensRaw: undefined,  // 移除原始字段
     }
   }
 
@@ -441,6 +456,7 @@ export class AppDatabase {
     nickname?: string
     cursorEmail?: string
     cursorToken?: string
+    cursorTokens?: string[]
     expiresAt?: string
     status?: string
   }): any {
@@ -449,8 +465,8 @@ export class AppDatabase {
 
     this.db
       .prepare(
-        `INSERT INTO licenses (id, license_key, nickname, cursor_email, cursor_token, expires_at, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO licenses (id, license_key, nickname, cursor_email, cursor_token, cursor_tokens, expires_at, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         id,
@@ -458,6 +474,7 @@ export class AppDatabase {
         data.nickname || null,
         data.cursorEmail || null,
         data.cursorToken || null,
+        data.cursorTokens ? JSON.stringify(data.cursorTokens) : null,
         data.expiresAt || null,
         data.status || 'pending',
         now,
@@ -474,6 +491,7 @@ export class AppDatabase {
     nickname?: string
     cursorEmail?: string
     cursorToken?: string
+    cursorTokens?: string[]
     expiresAt?: string
     status?: string
   }): boolean {
@@ -494,6 +512,10 @@ export class AppDatabase {
     if (data.cursorToken !== undefined) {
       updates.push('cursor_token = ?')
       values.push(data.cursorToken)
+    }
+    if (data.cursorTokens !== undefined) {
+      updates.push('cursor_tokens = ?')
+      values.push(data.cursorTokens ? JSON.stringify(data.cursorTokens) : null)
     }
     if (data.expiresAt !== undefined) {
       updates.push('expires_at = ?')
@@ -541,7 +563,7 @@ export class AppDatabase {
     const row = this.db
       .prepare(
         `SELECT id, license_key as licenseKey, nickname, cursor_email as cursorEmail,
-         cursor_token as cursorToken, expires_at as expiresAt, is_current as isCurrent,
+         cursor_token as cursorToken, cursor_tokens as cursorTokensRaw, expires_at as expiresAt, is_current as isCurrent,
          status, created_at as createdAt, updated_at as updatedAt
          FROM licenses WHERE is_current = 1`
       )
@@ -552,6 +574,8 @@ export class AppDatabase {
     return {
       ...row,
       isCurrent: Boolean(row.isCurrent),
+      cursorTokens: row.cursorTokensRaw ? JSON.parse(row.cursorTokensRaw) : undefined,
+      cursorTokensRaw: undefined,  // 移除原始字段
     }
   }
 

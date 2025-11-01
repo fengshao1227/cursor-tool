@@ -24,7 +24,8 @@ type ActivateResponse = {
   success: boolean
   message: string
   data?: {
-    cursorToken: string
+    cursorToken?: string  // 兼容单token
+    cursorTokens?: string[]  // 支持多token（优先使用）
     cursorEmail: string
     expiresAt: string
     remainingDays: number
@@ -131,7 +132,8 @@ export class LicenseService {
   async activate(licenseKey: string): Promise<{ 
     success: boolean
     message: string
-    cursorToken?: string
+    cursorToken?: string  // 兼容单token
+    cursorTokens?: string[]  // 支持多token
     cursorEmail?: string
     expiresAt?: string
     remainingDays?: number
@@ -208,11 +210,12 @@ export class LicenseService {
         console.warn('⚠️ 获取许可证凭证失败:', verifyError)
       }
       
-      // 返回 Token、Email 和有效期信息
+      // 返回 Token、Email 和有效期信息（支持多token）
       return {
         success: true,
         message: resp.message || '激活成功',
-        cursorToken: resp.data?.cursorToken,
+        cursorToken: resp.data?.cursorToken,  // 兼容单token
+        cursorTokens: resp.data?.cursorTokens,  // 多token（优先使用）
         cursorEmail: resp.data?.cursorEmail,
         expiresAt: resp.data?.expiresAt,
         remainingDays: resp.data?.remainingDays

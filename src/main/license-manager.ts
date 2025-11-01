@@ -25,6 +25,7 @@ export class LicenseManager {
     success: boolean
     message: string
     licenseId?: string
+    accountCount?: number
   }> {
     try {
       // 1. 调用激活接口
@@ -34,19 +35,82 @@ export class LicenseManager {
         return { success: false, message: result.message }
       }
 
-      // 2. 保存到本地数据库
+      // 2. 判断是单token还是多token
+      const tokens = result.cursorTokens || (result.cursorToken ? [result.cursorToken] : [])
+      
+      if (tokens.length === 0) {
+        return { success: false, message: '激活失败：未返回有效Token' }
+      }
+
+      // 3. 保存卡密到本地数据库
       const license = appDatabase.addLicense({
         licenseKey,
         nickname: nickname || `卡密-${licenseKey.substring(0, 8)}`,
         cursorEmail: result.cursorEmail,
-        cursorToken: result.cursorToken,
+        cursorToken: tokens[0],  // 保留第一个token作为主token
+        cursorTokens: tokens,  // 保存所有tokens
         status: 'active',
       })
 
+      // 4. 如果是多token，自动为每个token创建账号
+      let accountsCreated = 0
+      if (tokens.length > 1) {
+        console.log(`🎫 检测到${tokens.length}个Token，自动创建账号...`)
+        
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i]
+          const accountEmail = `${result.cursorEmail}_${i + 1}`
+          const accountNickname = `${nickname || '卡密账号'}-${i + 1}`
+          
+          try {
+            // 检查账号是否已存在
+            const existing = appDatabase.getAccountByEmail(accountEmail)
+            if (existing) {
+              console.log(`⏭️ 账号 ${accountEmail} 已存在，跳过`)
+              continue
+            }
+            
+            // 添加账号
+            appDatabase.addAccount(accountEmail, token, undefined, accountNickname)
+            accountsCreated++
+            console.log(`✅ 已创建账号 ${accountNickname} (${accountEmail})`)
+          } catch (err) {
+            console.warn(`⚠️ 创建账号失败:`, err)
+          }
+        }
+      } else {
+        // 单token，创建一个账号
+        try {
+          const existing = appDatabase.getAccountByEmail(result.cursorEmail!)
+          if (!existing) {
+            appDatabase.addAccount(
+              result.cursorEmail!,
+              tokens[0],
+              undefined,
+              nickname || `${result.cursorEmail}`
+            )
+            accountsCreated = 1
+            console.log(`✅ 已创建账号 ${result.cursorEmail}`)
+          } else {
+            // 更新已有账号的token
+            appDatabase.updateAccount(existing.id, { accessToken: tokens[0] })
+            accountsCreated = 1
+            console.log(`✅ 已更新账号 ${result.cursorEmail}`)
+          }
+        } catch (err) {
+          console.warn(`⚠️ 创建账号失败:`, err)
+        }
+      }
+
+      const message = tokens.length > 1 
+        ? `✅ 卡密添加成功！\n📧 邮箱：${result.cursorEmail}\n🎫 Token数量：${tokens.length}\n👤 已自动创建${accountsCreated}个账号`
+        : `✅ 卡密添加成功！\n📧 邮箱：${result.cursorEmail}\n👤 已创建账号`
+
       return {
         success: true,
-        message: `卡密添加成功！\n邮箱：${result.cursorEmail}`,
+        message,
         licenseId: license.id,
+        accountCount: accountsCreated,
       }
     } catch (error: any) {
       return {
@@ -171,6 +235,7 @@ export class LicenseManager {
   async reactivateLicense(licenseId: string): Promise<{
     success: boolean
     message: string
+    accountCount?: number
   }> {
     try {
       const license = appDatabase.getLicenseById(licenseId)
@@ -185,16 +250,57 @@ export class LicenseManager {
         return { success: false, message: result.message }
       }
 
+      // 判断是单token还是多token
+      const tokens = result.cursorTokens || (result.cursorToken ? [result.cursorToken] : [])
+      
+      if (tokens.length === 0) {
+        return { success: false, message: '刷新失败：未返回有效Token' }
+      }
+
       // 更新数据库
       appDatabase.updateLicense(licenseId, {
         cursorEmail: result.cursorEmail,
-        cursorToken: result.cursorToken,
+        cursorToken: tokens[0],
+        cursorTokens: tokens,
         status: 'active',
       })
 
+      // 如果是多token，自动更新或创建账号
+      let accountsUpdated = 0
+      if (tokens.length > 1) {
+        console.log(`🔄 检测到${tokens.length}个Token，更新账号...`)
+        
+        for (let i = 0; i < tokens.length; i++) {
+          const token = tokens[i]
+          const accountEmail = `${result.cursorEmail}_${i + 1}`
+          const accountNickname = `${license.nickname || '卡密账号'}-${i + 1}`
+          
+          try {
+            const existing = appDatabase.getAccountByEmail(accountEmail)
+            if (existing) {
+              // 更新已有账号
+              appDatabase.updateAccount(existing.id, { accessToken: token })
+              console.log(`✅ 已更新账号 ${accountEmail}`)
+            } else {
+              // 创建新账号
+              appDatabase.addAccount(accountEmail, token, undefined, accountNickname)
+              console.log(`✅ 已创建账号 ${accountEmail}`)
+            }
+            accountsUpdated++
+          } catch (err) {
+            console.warn(`⚠️ 更新账号失败:`, err)
+          }
+        }
+      }
+
+      const message = tokens.length > 1
+        ? `✅ 卡密已刷新\n🎫 Token数量：${tokens.length}\n👤 已更新${accountsUpdated}个账号`
+        : `✅ 卡密已刷新`
+
       return {
         success: true,
-        message: '卡密已刷新',
+        message,
+        accountCount: accountsUpdated,
       }
     } catch (error: any) {
       return {

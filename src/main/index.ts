@@ -12,6 +12,7 @@ import { processManager } from './process-manager'
 import { licenseService } from './license-service'
 import { tokenInjector } from './token-injector'
 import { licenseManager } from './license-manager'
+import { announcementService } from './announcement-service'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -199,7 +200,7 @@ ipcMain.handle('updateConfig', async (_, config: any) => {
   return { success: true, message: '配置已保存' }
 })
 
-// 许可证管理（卡密激活 - 直接添加到账号列表）
+// 许可证管理（卡密激活 - 直接添加到账号列表，支持多token）
 ipcMain.handle('activateLicense', async (_evt, licenseKey: string) => {
   try {
     // 1. 调用激活接口
@@ -209,11 +210,14 @@ ipcMain.handle('activateLicense', async (_evt, licenseKey: string) => {
       return { success: false, message: result.message }
     }
 
-    if (!result.cursorToken || !result.cursorEmail) {
+    // 2. 判断是单token还是多token
+    const tokens = result.cursorTokens || (result.cursorToken ? [result.cursorToken] : [])
+    
+    if (tokens.length === 0 || !result.cursorEmail) {
       return { success: false, message: '激活成功但未获取到账号信息' }
     }
 
-    // 2. 保存全局卡密有效期
+    // 3. 保存全局卡密有效期
     if (result.expiresAt) {
       appDatabase.updateLicenseExpiry(result.expiresAt)
       if (result.remainingDays) {
@@ -221,45 +225,91 @@ ipcMain.handle('activateLicense', async (_evt, licenseKey: string) => {
       }
     }
 
-    // 3. 检查邮箱是否已存在
-    const existing = appDatabase.getAccountByEmail(result.cursorEmail)
-    if (existing) {
-      // 更新已存在的账号 token
-      appDatabase.updateAccount(existing.id, {
-        accessToken: result.cursorToken,
-      })
+    // 4. 如果是多token，自动为每个token创建账号
+    let accountsCreated = 0
+    let accountsUpdated = 0
+    
+    if (tokens.length > 1) {
+      console.log(`🎫 检测到${tokens.length}个Token，自动创建账号...`)
+      
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i]
+        const accountEmail = `${result.cursorEmail}_${i + 1}`
+        const accountNickname = `卡密-${licenseKey.substring(0, 8)}-${i + 1}`
+        
+        try {
+          // 检查账号是否已存在
+          const existing = appDatabase.getAccountByEmail(accountEmail)
+          if (existing) {
+            // 更新已有账号的token
+            appDatabase.updateAccount(existing.id, { accessToken: token })
+            accountsUpdated++
+            console.log(`✅ 已更新账号 ${accountEmail}`)
+          } else {
+            // 添加新账号
+            appDatabase.addAccount(accountEmail, token, undefined, accountNickname)
+            accountsCreated++
+            console.log(`✅ 已创建账号 ${accountNickname} (${accountEmail})`)
+          }
+        } catch (err) {
+          console.warn(`⚠️ 处理账号失败:`, err)
+        }
+      }
+      
+      appDatabase.addLog('activate_license', `Added ${accountsCreated} accounts (updated ${accountsUpdated}) via license: ${result.cursorEmail}`)
       
       const expiryInfo = result.expiresAt 
-        ? `\n\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
+        ? `\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
         : ''
       
       return {
         success: true,
-        message: `✅ 卡密激活成功！\n\n账号 ${result.cursorEmail} 已存在，已更新token${expiryInfo}\n\n请在账号列表中切换使用`,
+        message: `✅ 卡密激活成功！\n\n📧 邮箱：${result.cursorEmail}\n🎫 Token数量：${tokens.length}\n👤 创建账号：${accountsCreated}个\n🔄 更新账号：${accountsUpdated}个${expiryInfo}\n\n请在账号列表中切换使用`,
         cursorEmail: result.cursorEmail,
-        cursorToken: result.cursorToken,
+        cursorTokens: tokens,
+        accountCount: accountsCreated + accountsUpdated,
       }
-    }
+    } else {
+      // 单token，创建一个账号
+      const existing = appDatabase.getAccountByEmail(result.cursorEmail)
+      if (existing) {
+        // 更新已存在的账号 token
+        appDatabase.updateAccount(existing.id, {
+          accessToken: tokens[0],
+        })
+        
+        const expiryInfo = result.expiresAt 
+          ? `\n\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
+          : ''
+        
+        return {
+          success: true,
+          message: `✅ 卡密激活成功！\n\n账号 ${result.cursorEmail} 已存在，已更新token${expiryInfo}\n\n请在账号列表中切换使用`,
+          cursorEmail: result.cursorEmail,
+          cursorToken: tokens[0],
+        }
+      }
 
-    // 4. 添加新账号到账号列表
-    const account = appDatabase.addAccount(
-      result.cursorEmail,
-      result.cursorToken,
-      undefined,
-      `卡密-${licenseKey.substring(0, 8)}`
-    )
+      // 添加新账号到账号列表
+      const account = appDatabase.addAccount(
+        result.cursorEmail,
+        tokens[0],
+        undefined,
+        `卡密-${licenseKey.substring(0, 8)}`
+      )
 
-    appDatabase.addLog('activate_license', `Added account via license: ${result.cursorEmail}`)
+      appDatabase.addLog('activate_license', `Added account via license: ${result.cursorEmail}`)
 
-    const expiryInfo = result.expiresAt 
-      ? `\n\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
-      : ''
+      const expiryInfo = result.expiresAt 
+        ? `\n\n📅 卡密有效期至：${new Date(result.expiresAt).toLocaleDateString()}\n⏰ 剩余天数：${result.remainingDays || 0}天`
+        : ''
 
-    return {
-      success: true,
-      message: `✅ 卡密激活成功！\n\n账号已添加到列表：${result.cursorEmail}${expiryInfo}\n\n请在账号列表中切换使用`,
-      cursorEmail: result.cursorEmail,
-      cursorToken: result.cursorToken,
+      return {
+        success: true,
+        message: `✅ 卡密激活成功！\n\n账号已添加到列表：${result.cursorEmail}${expiryInfo}\n\n请在账号列表中切换使用`,
+        cursorEmail: result.cursorEmail,
+        cursorToken: tokens[0],
+      }
     }
   } catch (error: any) {
     return {
@@ -362,6 +412,26 @@ ipcMain.handle('deleteBackup', async (_, backupPath: string) => {
   return {
     success,
     message: success ? '备份已删除' : '删除备份失败',
+  }
+})
+
+// 在线公告
+ipcMain.handle('getAnnouncement', async () => {
+  try {
+    const announcement = await announcementService.getAnnouncement()
+    return announcement
+  } catch (error: any) {
+    console.error('获取公告失败:', error)
+    return null
+  }
+})
+
+ipcMain.handle('dismissAnnouncement', async (_, announcementId: string) => {
+  try {
+    announcementService.dismissAnnouncement(announcementId)
+    return { success: true, message: '已关闭公告' }
+  } catch (error: any) {
+    return { success: false, message: `关闭公告失败：${error.message}` }
   }
 })
 

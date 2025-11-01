@@ -48,7 +48,10 @@ const api: IpcApi = {
   activateLicense: (licenseKey) => ipcRenderer.invoke('activateLicense', licenseKey),
   deactivateLicense: () => ipcRenderer.invoke('deactivateLicense'),
   getLicenseStatus: () => ipcRenderer.invoke('getLicenseStatus'),
-
+  
+  // 在线公告
+  getAnnouncement: () => ipcRenderer.invoke('getAnnouncement'),
+  dismissAnnouncement: (announcementId) => ipcRenderer.invoke('dismissAnnouncement', announcementId),
 }
 
 contextBridge.exposeInMainWorld('api', api)

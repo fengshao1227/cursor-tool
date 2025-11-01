@@ -482,8 +482,10 @@ export class BackupService {
 
   /**
    * 恢复完整备份（会话 + 设置 + MCP）
+   * @param backupPath 备份路径
+   * @param skipAuth 是否跳过恢复认证文件（切换账号时应设为true）
    */
-  async restoreAll(backupPath: string): Promise<{
+  async restoreAll(backupPath: string, skipAuth: boolean = false): Promise<{
     success: boolean
     message: string
   }> {
@@ -561,15 +563,19 @@ export class BackupService {
         restoredItems.push('History')
       }
 
-      // 5. 恢复 Cookies
-      const cookiesBackup = path.join(backupPath, 'Cookies')
-      if (fs.existsSync(cookiesBackup)) {
-        const cookiesPath = path.join(cursorPaths.dataPath, 'Cookies')
-        if (fs.existsSync(cookiesPath)) {
-          fs.copyFileSync(cookiesPath, cookiesPath + '.before-restore')
+      // 5. 恢复 Cookies（可选，切换账号时跳过）
+      if (!skipAuth) {
+        const cookiesBackup = path.join(backupPath, 'Cookies')
+        if (fs.existsSync(cookiesBackup)) {
+          const cookiesPath = path.join(cursorPaths.dataPath, 'Cookies')
+          if (fs.existsSync(cookiesPath)) {
+            fs.copyFileSync(cookiesPath, cookiesPath + '.before-restore')
+          }
+          fs.copyFileSync(cookiesBackup, cookiesPath)
+          restoredItems.push('Cookies')
         }
-        fs.copyFileSync(cookiesBackup, cookiesPath)
-        restoredItems.push('Cookies')
+      } else {
+        restoredItems.push('Cookies (跳过，使用新账号认证)')
       }
 
       // 6. 恢复 Local Storage

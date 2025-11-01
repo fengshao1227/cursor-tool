@@ -8,6 +8,7 @@ import BackupPanel from './components/BackupPanel'
 import SettingsPanel from './components/SettingsPanel'
 import LicenseModal from './components/LicenseModal'
 import Sidebar, { NavItem } from './components/Sidebar'
+import { AnnouncementBanner } from './components/AnnouncementBanner'
 import { Plus, UserPlus, Key } from 'phosphor-react'
 
 function App() {
@@ -325,8 +326,15 @@ function App() {
         )}
 
         {/* 内容 */}
-        <div className="flex-1 overflow-hidden">
-          {renderContent()}
+        <div className="flex-1 overflow-y-auto">
+          {/* 在线公告 - 显示在所有页面顶部，优先级最高 */}
+          <div className="px-6 pt-4">
+            <AnnouncementBanner />
+          </div>
+          
+          <div className="h-full">
+            {renderContent()}
+          </div>
         </div>
 
         {/* 底部状态栏 */}
