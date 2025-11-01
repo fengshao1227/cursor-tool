@@ -87,7 +87,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # 获取所有 tag 信息
-          token: ${{ secrets.GH_TOKEN }}
+          # 使用默认的 GITHUB_TOKEN，不需要显式设置 token
       
       - name: Get tag name
         id: get_tag
@@ -127,17 +127,25 @@ jobs:
           sudo apt install gh -y
       
       - name: Authenticate GitHub CLI
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          echo "$GH_TOKEN" | gh auth login --with-token
+          # 优先使用 GH_TOKEN secret，否则使用默认的 GITHUB_TOKEN
+          if [ -n "${{ secrets.GH_TOKEN }}" ]; then
+            echo "${{ secrets.GH_TOKEN }}" | gh auth login --with-token
+          else
+            echo "${{ github.token }}" | gh auth login --with-token
+          fi
       
       - name: Create or Update Release
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
           echo "创建或更新 Release: $TAG_NAME"
+          
+          # 如果 GH_TOKEN 不存在，使用默认的 GITHUB_TOKEN
+          if [ -n "${{ secrets.GH_TOKEN }}" ]; then
+            export GH_TOKEN="${{ secrets.GH_TOKEN }}"
+          else
+            export GH_TOKEN="${{ github.token }}"
+          fi
           
           # 检查 release 是否已存在
           if gh release view "$TAG_NAME" --repo fengshao1227/cursor-tool &>/dev/null; then
@@ -157,11 +165,17 @@ jobs:
           fi
       
       - name: Upload macOS files
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
           echo "上传 macOS 文件到 Release: $TAG_NAME"
+          
+          # 如果 GH_TOKEN 不存在，使用默认的 GITHUB_TOKEN
+          if [ -n "${{ secrets.GH_TOKEN }}" ]; then
+            export GH_TOKEN="${{ secrets.GH_TOKEN }}"
+          else
+            export GH_TOKEN="${{ github.token }}"
+          fi
+          
           if [ -d "artifacts/release-macos-latest" ]; then
             cd artifacts/release-macos-latest
             for file in *.dmg *.zip *.blockmap; do
@@ -177,11 +191,17 @@ jobs:
           fi
       
       - name: Upload Windows files
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
           echo "上传 Windows 文件到 Release: $TAG_NAME"
+          
+          # 如果 GH_TOKEN 不存在，使用默认的 GITHUB_TOKEN
+          if [ -n "${{ secrets.GH_TOKEN }}" ]; then
+            export GH_TOKEN="${{ secrets.GH_TOKEN }}"
+          else
+            export GH_TOKEN="${{ github.token }}"
+          fi
+          
           if [ -d "artifacts/release-windows-latest" ]; then
             cd artifacts/release-windows-latest
             # 上传所有 .exe 和 .blockmap 文件（包括 portable 格式）
@@ -204,10 +224,16 @@ jobs:
           fi
       
       - name: List uploaded files
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           TAG_NAME="${{ steps.get_tag.outputs.TAG_NAME }}"
           echo "Release $TAG_NAME 中的文件:"
+          
+          # 如果 GH_TOKEN 不存在，使用默认的 GITHUB_TOKEN
+          if [ -n "${{ secrets.GH_TOKEN }}" ]; then
+            export GH_TOKEN="${{ secrets.GH_TOKEN }}"
+          else
+            export GH_TOKEN="${{ github.token }}"
+          fi
+          
           gh release view "$TAG_NAME" --repo fengshao1227/cursor-tool || echo "Release not found"
 
