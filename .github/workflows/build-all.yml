@@ -58,27 +58,22 @@ jobs:
             if ($LASTEXITCODE -ne 0) { exit 1 }
           }
 
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: win-build-${{ github.run_number }}
-          path: |
-            release/**/*.exe
-            release/**/*.nsis.exe
-            release/**/*.portable.exe
-          retention-days: 7
-          if-no-files-found: warn
+      - name: List build artifacts
+        shell: pwsh
+        run: |
+          Write-Host "Build artifacts:"
+          Get-ChildItem -Path release -Recurse -File | ForEach-Object {
+            Write-Host "  - $($_.FullName) ($([math]::Round($_.Length / 1MB, 2)) MB)"
+          }
 
-      - name: Create/Update Release (Windows)
+      - name: Create Release (Windows)
         if: success()
         uses: softprops/action-gh-release@v1
         with:
           tag_name: build-${{ github.run_number }}-win
-          name: Build ${{ github.run_number }} - Windows
+          name: Build ${{ github.run_number }} - Windows ${{ github.event.inputs.no_license && '(无验证版本)' || '(有验证版本)' }}
           files: |
             release/**/*.exe
-            release/**/*.nsis.exe
-            release/**/*.portable.exe
           draft: false
           prerelease: true
           body: |
@@ -89,6 +84,11 @@ jobs:
             - 分支: ${{ github.ref_name }}
             - 时间: ${{ github.event.head_commit.timestamp || github.run_started_at }}
             - 验证: ${{ github.event.inputs.no_license && '无验证版本' || '有验证版本' }}
+            
+            **下载说明：**
+            - 从下方 Assets 下载 .exe 文件
+            - NSIS 安装器：Cursor账号管理器 Setup *.exe
+            - 便携版：Cursor账号管理器 *.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -102,20 +102,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: win-build-*
-          merge-multiple: true
-          path: ./artifacts/win
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
-          files: |
-            artifacts/**/*
           draft: false
           prerelease: false
           body: |
@@ -125,8 +116,9 @@ jobs:
             - 提交: ${{ github.sha }}
             - 时间: ${{ github.event.head_commit.timestamp }}
             
-            **包含文件：**
-            - Windows 版本 (.exe)
+            **说明：**
+            - Windows 版本已在构建时自动上传到 Release
+            - 请从 Assets 部分下载 .exe 文件
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
