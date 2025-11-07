@@ -45,27 +45,18 @@ jobs:
         continue-on-error: true
 
       - name: Build Windows version
-        shell: powershell
+        shell: pwsh
         env:
-          NO_LICENSE: ${{ github.event.inputs.no_license }}
+          NO_LICENSE: ${{ github.event.inputs.no_license || 'false' }}
         run: |
-          $noLicense = ($env:NO_LICENSE -eq "true")
-          Write-Host "=========================================="
-          Write-Host "Build Configuration:"
-          Write-Host "  No License Check: $noLicense"
-          Write-Host "=========================================="
-
+          $noLicense = ($env:NO_LICENSE -eq 'true')
           if ($noLicense) {
-            Write-Host "🔓 Building Windows version WITHOUT license check"
             npm run dist:no-license:win
             if ($LASTEXITCODE -ne 0) { exit 1 }
           } else {
-            Write-Host "🔐 Building Windows version WITH license check"
             npm run dist:win
             if ($LASTEXITCODE -ne 0) { exit 1 }
           }
-
-          Write-Host "✅ Build completed successfully!"
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
