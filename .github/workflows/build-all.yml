@@ -32,13 +32,13 @@ jobs:
       - name: Install dependencies
         shell: powershell
         run: |
-          Write-Host "📦 Installing dependencies..."
+          Write-Host "Installing dependencies..."
           npm install --legacy-peer-deps
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "⚠️ First install failed, trying without --legacy-peer-deps"
+            Write-Host "First install failed, trying without --legacy-peer-deps"
             npm install
           }
-          Write-Host "✅ Dependencies installed"
+          Write-Host "Dependencies installed"
 
       - name: Rebuild native modules
         run: npm run rebuild
@@ -50,10 +50,10 @@ jobs:
         shell: powershell
         run: |
           if ($env:DISABLE_LICENSE_CHECK -eq "true") {
-            Write-Host "🔓 Building Windows version without license check"
+            Write-Host "Building Windows version without license check"
             npm run dist:no-license:win
           } else {
-            Write-Host "🔐 Building Windows version with license check"
+            Write-Host "Building Windows version with license check"
             npm run dist:win
           }
 
