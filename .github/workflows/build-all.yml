@@ -47,58 +47,25 @@ jobs:
       - name: Build Windows version
         shell: powershell
         env:
-          DISABLE_LICENSE_CHECK: ${{ github.event.inputs.no_license && 'true' || '' }}
+          NO_LICENSE: ${{ github.event.inputs.no_license }}
         run: |
-          $noLicense = "${{ github.event.inputs.no_license }}" -eq "true"
+          $noLicense = ($env:NO_LICENSE -eq "true")
           Write-Host "=========================================="
           Write-Host "Build Configuration:"
           Write-Host "  No License Check: $noLicense"
-          Write-Host "  DISABLE_LICENSE_CHECK: $env:DISABLE_LICENSE_CHECK"
           Write-Host "=========================================="
-          
+
           if ($noLicense) {
             Write-Host "🔓 Building Windows version WITHOUT license check"
-            # 确保环境变量被设置
-            $env:DISABLE_LICENSE_CHECK = "true"
-            Write-Host "Environment variable DISABLE_LICENSE_CHECK = $env:DISABLE_LICENSE_CHECK"
-            
-            # 验证环境变量设置
-            $check = [System.Environment]::GetEnvironmentVariable("DISABLE_LICENSE_CHECK", "Process")
-            Write-Host "Verified DISABLE_LICENSE_CHECK = $check"
-            
-            # 使用 cross-env 确保环境变量传递（cross-env 在 Windows 上也应该工作）
-            Write-Host "Running: npm run build with DISABLE_LICENSE_CHECK=true"
-            npm run build
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "❌ Build failed!"
-              exit 1
-            }
-            
-            Write-Host "Running: electron-builder --win with DISABLE_LICENSE_CHECK=true"
-            $env:DISABLE_LICENSE_CHECK = "true"
-            npx electron-builder --win
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "❌ Electron builder failed!"
-              exit 1
-            }
+            npm run dist:no-license:win
+            if ($LASTEXITCODE -ne 0) { exit 1 }
           } else {
             Write-Host "🔐 Building Windows version WITH license check"
             npm run dist:win
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "❌ Build failed!"
-              exit 1
-            }
+            if ($LASTEXITCODE -ne 0) { exit 1 }
           }
-          
-          Write-Host "=========================================="
+
           Write-Host "✅ Build completed successfully!"
-          Write-Host "=========================================="
-          
-          # 列出构建产物
-          Write-Host "Build artifacts:"
-          Get-ChildItem -Path release -Recurse -File | ForEach-Object {
-            Write-Host "  - $($_.FullName)"
-          }
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
