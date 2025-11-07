@@ -29,7 +29,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Rebuild native modules
         run: npm run rebuild
@@ -54,8 +59,29 @@ jobs:
           path: |
             release/**/*.dmg
             release/**/*.zip
-          retention-days: 30
+          retention-days: 7
           if-no-files-found: warn
+
+      - name: Create/Update Release (Mac)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ github.run_number }}-mac
+          name: Build ${{ github.run_number }} - Mac
+          files: |
+            release/**/*.dmg
+            release/**/*.zip
+          draft: false
+          prerelease: true
+          body: |
+            Mac 版本构建 #${{ github.run_number }}
+            
+            **构建信息：**
+            - 提交: ${{ github.sha }}
+            - 分支: ${{ github.ref_name }}
+            - 时间: ${{ github.event.head_commit.timestamp || github.run_started_at }}
+            - 验证: ${{ github.event.inputs.no_license && '无验证版本' || '有验证版本' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-windows:
     runs-on: windows-latest
@@ -70,7 +96,12 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Rebuild native modules
         run: npm run rebuild
@@ -97,14 +128,41 @@ jobs:
             release/**/*.exe
             release/**/*.nsis.exe
             release/**/*.portable.exe
-          retention-days: 30
+          retention-days: 7
           if-no-files-found: warn
+
+      - name: Create/Update Release (Windows)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: build-${{ github.run_number }}-win
+          name: Build ${{ github.run_number }} - Windows
+          files: |
+            release/**/*.exe
+            release/**/*.nsis.exe
+            release/**/*.portable.exe
+          draft: false
+          prerelease: true
+          body: |
+            Windows 版本构建 #${{ github.run_number }}
+            
+            **构建信息：**
+            - 提交: ${{ github.sha }}
+            - 分支: ${{ github.ref_name }}
+            - 时间: ${{ github.event.head_commit.timestamp || github.run_started_at }}
+            - 验证: ${{ github.event.inputs.no_license && '无验证版本' || '有验证版本' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   create-release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-mac, build-windows]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download Mac artifacts
         uses: actions/download-artifact@v4
         with:
@@ -128,6 +186,16 @@ jobs:
             artifacts/**/*
           draft: false
           prerelease: false
+          body: |
+            ## Release ${{ github.ref_name }}
+            
+            **构建信息：**
+            - 提交: ${{ github.sha }}
+            - 时间: ${{ github.event.head_commit.timestamp }}
+            
+            **包含文件：**
+            - Mac 版本 (.dmg, .zip)
+            - Windows 版本 (.exe)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
