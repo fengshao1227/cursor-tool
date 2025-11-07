@@ -1,4 +1,4 @@
-name: Build All Platforms
+name: Build Windows
 
 on:
   push:
@@ -16,73 +16,6 @@ on:
         type: boolean
 
 jobs:
-  build-mac:
-    runs-on: macos-latest
-    continue-on-error: false
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: |
-          echo "📦 Installing dependencies..."
-          npm install --legacy-peer-deps || npm install
-          echo "✅ Dependencies installed"
-
-      - name: Rebuild native modules
-        run: npm run rebuild
-        continue-on-error: true
-
-      - name: Build Mac version
-        env:
-          DISABLE_LICENSE_CHECK: ${{ github.event.inputs.no_license && 'true' || 'false' }}
-        run: |
-          if [ "$DISABLE_LICENSE_CHECK" = "true" ]; then
-            echo "🔓 Building Mac version without license check"
-            npm run dist:no-license:mac
-          else
-            echo "🔐 Building Mac version with license check"
-            npm run dist:mac
-          fi
-
-      - name: Upload Mac artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-build-${{ github.run_number }}
-          path: |
-            release/**/*.dmg
-            release/**/*.zip
-          retention-days: 7
-          if-no-files-found: warn
-
-      - name: Create/Update Release (Mac)
-        if: success()
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: build-${{ github.run_number }}-mac
-          name: Build ${{ github.run_number }} - Mac
-          files: |
-            release/**/*.dmg
-            release/**/*.zip
-          draft: false
-          prerelease: true
-          body: |
-            Mac 版本构建 #${{ github.run_number }}
-            
-            **构建信息：**
-            - 提交: ${{ github.sha }}
-            - 分支: ${{ github.ref_name }}
-            - 时间: ${{ github.event.head_commit.timestamp || github.run_started_at }}
-            - 验证: ${{ github.event.inputs.no_license && '无验证版本' || '有验证版本' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   build-windows:
     runs-on: windows-latest
     continue-on-error: false
@@ -160,20 +93,13 @@ jobs:
 
   create-release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-mac, build-windows]
+    needs: [build-windows]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Download Mac artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: mac-build-*
-          merge-multiple: true
-          path: ./artifacts/mac
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
@@ -199,7 +125,6 @@ jobs:
             - 时间: ${{ github.event.head_commit.timestamp }}
             
             **包含文件：**
-            - Mac 版本 (.dmg, .zip)
             - Windows 版本 (.exe)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
