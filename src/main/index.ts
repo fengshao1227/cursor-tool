@@ -333,6 +333,14 @@ ipcMain.handle('getLicenseStatus', async () => {
   // 实时验证卡密状态，确保卡密仍然有效
   const result = await licenseService.ensureLicensed()
   
+  // 🔓 如果是无验证版本，直接返回有效状态
+  if (result.success && result.message === '无验证版本') {
+    return {
+      valid: true,
+      message: '无验证版本'
+    }
+  }
+  
   if (result.success) {
     // 验证成功，返回状态信息
     const status = licenseService.getStatus()

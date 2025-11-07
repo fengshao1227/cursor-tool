@@ -11,6 +11,9 @@ export default defineConfig({
           index: resolve(__dirname, 'src/main/index.ts')
         }
       }
+    },
+    define: {
+      'process.env.DISABLE_LICENSE_CHECK': JSON.stringify(process.env.DISABLE_LICENSE_CHECK === 'true' || process.env.DISABLE_LICENSE_CHECK === '1')
     }
   },
   preload: {

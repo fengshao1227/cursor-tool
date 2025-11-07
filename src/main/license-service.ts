@@ -39,9 +39,15 @@ const DEFAULT_SERVER_URL = process.env.LICENSE_SERVER_URL || 'http://117.72.163.
 const EMBEDDED_PUBLIC_KEY_B64 = process.env.LICENSE_PUBLIC_KEY_B64 || 'MCowBQYDK2VwAyEAh1cSzLyOG6HxBNcqxYUOcheYPJlB0v9iBK4e8HjNHao='
 
 // 🔓 验证开关：设置为 true 时禁用验证（用于打包无验证版本）
-// 可以通过环境变量 DISABLE_LICENSE_CHECK=true 来控制
-// 或者在构建时设置：DISABLE_LICENSE_CHECK=true npm run build
-const DISABLE_LICENSE_CHECK = process.env.DISABLE_LICENSE_CHECK === 'true' || process.env.DISABLE_LICENSE_CHECK === '1'
+// Vite 会在构建时通过 define 配置替换 process.env.DISABLE_LICENSE_CHECK
+// 构建无验证版本时：DISABLE_LICENSE_CHECK=true npm run build
+const DISABLE_LICENSE_CHECK = process.env.DISABLE_LICENSE_CHECK === 'true' || 
+                               process.env.DISABLE_LICENSE_CHECK === '1' ||
+                               process.env.DISABLE_LICENSE_CHECK === true ||
+                               (typeof process !== 'undefined' && process.env && (process.env as any).DISABLE_LICENSE_CHECK === true)
+
+// 调试日志（构建时会保留）
+console.log('[License] DISABLE_LICENSE_CHECK:', DISABLE_LICENSE_CHECK, 'env:', process.env.DISABLE_LICENSE_CHECK)
 
 function httpFetch<T = any>(url: string, body: any): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -288,6 +294,12 @@ export class LicenseService {
   }
 
   async verifyOnline(): Promise<{ success: boolean; message: string }> {
+    // 🔓 如果禁用验证，直接返回成功，不进行任何网络请求
+    if (DISABLE_LICENSE_CHECK) {
+      console.log('🔓 验证已禁用（无验证版本），跳过在线验证')
+      return { success: true, message: '无验证版本' }
+    }
+    
     const serverUrl = getServerUrl()
     const licenseKey = getConfig('license.key')
     if (!serverUrl) return { success: false, message: '未配置服务器地址' }
