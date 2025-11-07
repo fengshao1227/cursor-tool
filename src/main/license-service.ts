@@ -38,6 +38,11 @@ type ActivateResponse = {
 const DEFAULT_SERVER_URL = process.env.LICENSE_SERVER_URL || 'http://117.72.163.3:8080'
 const EMBEDDED_PUBLIC_KEY_B64 = process.env.LICENSE_PUBLIC_KEY_B64 || 'MCowBQYDK2VwAyEAh1cSzLyOG6HxBNcqxYUOcheYPJlB0v9iBK4e8HjNHao='
 
+// 🔓 验证开关：设置为 true 时禁用验证（用于打包无验证版本）
+// 可以通过环境变量 DISABLE_LICENSE_CHECK=true 来控制
+// 或者在构建时设置：DISABLE_LICENSE_CHECK=true npm run build
+const DISABLE_LICENSE_CHECK = process.env.DISABLE_LICENSE_CHECK === 'true' || process.env.DISABLE_LICENSE_CHECK === '1'
+
 function httpFetch<T = any>(url: string, body: any): Promise<T> {
   return new Promise((resolve, reject) => {
     const isHttps = url.startsWith('https:')
@@ -354,6 +359,12 @@ export class LicenseService {
   }
 
   getStatus(): { valid: boolean; message?: string; expiresAt?: string; notAfter?: string } {
+    // 🔓 如果禁用验证，直接返回有效状态
+    if (DISABLE_LICENSE_CHECK) {
+      console.log('🔓 验证已禁用（无验证版本）')
+      return { valid: true, message: '无验证版本' }
+    }
+
     try {
       const receiptStr = getConfig('license.receipt')
       const sig = getConfig('license.signature') || ''
@@ -373,6 +384,12 @@ export class LicenseService {
   }
 
   async ensureLicensed(): Promise<{ success: boolean; message?: string }> {
+    // 🔓 如果禁用验证，直接返回成功
+    if (DISABLE_LICENSE_CHECK) {
+      console.log('🔓 验证已禁用（无验证版本）')
+      return { success: true, message: '无验证版本' }
+    }
+
     // 优先在线验证，确保卡密仍然有效
     try {
       const online = await this.verifyOnline()

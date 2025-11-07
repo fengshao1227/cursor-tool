@@ -107,8 +107,67 @@ export class MachineIdManager {
   }
 
   /**
+   * 更新 state.vscdb 数据库中的机器ID（参考 Python 脚本实现）
+   */
+  private updateStateDatabaseMachineIds(newIds: {
+    machineId: string
+    macMachineId: string
+    deviceId: string
+    sqmId: string
+  }): boolean {
+    try {
+      const stateDbPath = path.join(
+        cursorPaths.dataPath,
+        'User',
+        'globalStorage',
+        'state.vscdb'
+      )
+
+      if (!fs.existsSync(stateDbPath)) {
+        console.warn('state.vscdb 不存在，跳过数据库更新')
+        return false
+      }
+
+      // 使用 better-sqlite3 更新数据库
+      const Database = require('better-sqlite3')
+      const db = new Database(stateDbPath)
+
+      // 确保表存在
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS ItemTable (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        )
+      `)
+
+      // 更新所有机器ID字段（参考 Python 脚本）
+      const idsToUpdate = {
+        'telemetry.devDeviceId': newIds.deviceId,
+        'telemetry.macMachineId': newIds.macMachineId,
+        'telemetry.machineId': newIds.machineId,
+        'telemetry.sqmId': newIds.sqmId,
+        'storage.serviceMachineId': newIds.deviceId, // 使用 deviceId
+      }
+
+      const stmt = db.prepare('INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)')
+      
+      for (const [key, value] of Object.entries(idsToUpdate)) {
+        stmt.run(key, value)
+      }
+
+      db.close()
+      console.log('✅ state.vscdb 数据库中的机器ID已更新')
+      return true
+    } catch (error: any) {
+      console.warn('更新 state.vscdb 数据库失败:', error.message)
+      return false
+    }
+  }
+
+  /**
    * 重置机器码
    * 这会让Cursor认为是一个新设备
+   * 现在同时更新 storage.json 和 state.vscdb（参考 Python 脚本）
    */
   resetMachineId(): {
     success: boolean
@@ -150,6 +209,14 @@ export class MachineIdManager {
 
       // 写入新配置
       fs.writeFileSync(storagePath, JSON.stringify(storage, null, 4), 'utf-8')
+
+      // 🔥 新增：同时更新 state.vscdb 数据库（参考 Python 脚本）
+      this.updateStateDatabaseMachineIds({
+        machineId: newMachineId,
+        macMachineId: newMacMachineId,
+        deviceId: newDeviceId,
+        sqmId: newSqmId,
+      })
 
       console.log('✅ Machine ID reset successfully')
       console.log('Old ID:', oldMachineId)

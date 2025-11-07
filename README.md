@@ -96,8 +96,18 @@ npm run diagnose  # 自动检查构建环境和依赖
 ```
 
 **使用 GitHub Actions 自动构建**：
-- 已配置自动在 Windows/Mac 平台构建
-- 推送代码后在 Actions 标签页下载构建产物
+- ✅ 已配置自动构建工作流（`.github/workflows/build-all.yml`）
+- ✅ 推送到 `main` 分支时自动触发构建
+- ✅ 支持手动触发，可选择有验证/无验证版本
+- ✅ 创建版本标签（如 `v1.0.4`）时自动发布 Release
+- ✅ 构建完成后在 Actions 标签页下载构建产物
+
+**使用方法：**
+1. 推送代码：`git push origin main`（自动触发）
+2. 或手动触发：GitHub → Actions → Build All Platforms → Run workflow
+3. 下载构建产物：Actions 页面 → 最新运行 → Artifacts
+
+详细说明请查看：[GitHub Actions构建说明.md](GitHub Actions构建说明.md)
 
 **常见问题**：
 - 应用无法启动：必须在 Windows 上重新 `npm install` 和构建

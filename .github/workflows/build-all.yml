@@ -1,0 +1,133 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      no_license:
+        description: 'Build without license check'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules
+        run: npm run rebuild
+        continue-on-error: true
+
+      - name: Build Mac version
+        env:
+          DISABLE_LICENSE_CHECK: ${{ github.event.inputs.no_license && 'true' || 'false' }}
+        run: |
+          if [ "$DISABLE_LICENSE_CHECK" = "true" ]; then
+            echo "🔓 Building Mac version without license check"
+            npm run dist:no-license:mac
+          else
+            echo "🔐 Building Mac version with license check"
+            npm run dist:mac
+          fi
+
+      - name: Upload Mac artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build-${{ github.run_number }}
+          path: |
+            release/**/*.dmg
+            release/**/*.zip
+          retention-days: 30
+          if-no-files-found: warn
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules
+        run: npm run rebuild
+        continue-on-error: true
+
+      - name: Build Windows version
+        env:
+          DISABLE_LICENSE_CHECK: ${{ github.event.inputs.no_license && 'true' || 'false' }}
+        shell: powershell
+        run: |
+          if ($env:DISABLE_LICENSE_CHECK -eq "true") {
+            Write-Host "🔓 Building Windows version without license check"
+            npm run dist:no-license:win
+          } else {
+            Write-Host "🔐 Building Windows version with license check"
+            npm run dist:win
+          }
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-build-${{ github.run_number }}
+          path: |
+            release/**/*.exe
+            release/**/*.nsis.exe
+            release/**/*.portable.exe
+          retention-days: 30
+          if-no-files-found: warn
+
+  create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-mac, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Mac artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mac-build-*
+          merge-multiple: true
+          path: ./artifacts/mac
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: win-build-*
+          merge-multiple: true
+          path: ./artifacts/win
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: |
+            artifacts/**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
