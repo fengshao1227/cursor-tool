@@ -1,0 +1,124 @@
+name: Build No-License Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      build_all:
+        description: 'Build all platforms'
+        required: false
+        default: 'true'
+        type: boolean
+
+jobs:
+  build-mac:
+    name: Build Mac (No License)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Mac (No License)
+        env:
+          DISABLE_LICENSE_CHECK: 'true'
+        run: npm run dist:no-license:mac
+
+      - name: Upload Mac artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build-no-license
+          path: release/*.dmg
+          retention-days: 30
+
+      - name: Upload Mac ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build-no-license-zip
+          path: release/*-mac.zip
+          retention-days: 30
+
+  build-windows:
+    name: Build Windows (No License)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows (No License)
+        env:
+          DISABLE_LICENSE_CHECK: 'true'
+        run: npm run dist:no-license:win
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-build-no-license
+          path: release/*.exe
+          retention-days: 30
+
+      - name: Upload Windows portable artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-build-no-license-portable
+          path: release/*.exe
+          retention-days: 30
+
+  create-release:
+    name: Create Release
+    needs: [build-mac, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Mac artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-build-no-license
+          path: artifacts/mac
+
+      - name: Download Mac ZIP artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-build-no-license-zip
+          path: artifacts/mac-zip
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: win-build-no-license
+          path: artifacts/win
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/mac/*.dmg
+            artifacts/mac-zip/*.zip
+            artifacts/win/*.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
