@@ -2,8 +2,6 @@ name: Build No-License Version
 
 on:
   push:
-    branches:
-      - main
     tags:
       - 'v*'
   workflow_dispatch:
@@ -11,7 +9,7 @@ on:
 jobs:
   build-mac-intel:
     name: Build Mac Intel (No License)
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -46,7 +44,7 @@ jobs:
 
   build-mac-m1:
     name: Build Mac M芯片 (No License)
-    runs-on: macos-latest
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,7 +96,7 @@ jobs:
       - name: Build Windows (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: npm run dist:no-license:win
+        run: cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --win
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
