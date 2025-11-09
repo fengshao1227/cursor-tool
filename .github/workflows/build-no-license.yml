@@ -4,17 +4,13 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
-    inputs:
-      build_all:
-        description: 'Build all platforms'
-        required: false
-        default: 'true'
-        type: boolean
 
 jobs:
-  build-mac:
-    name: Build Mac (No License)
+  build-mac-intel:
+    name: Build Mac Intel (No License)
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -29,22 +25,57 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Mac (No License)
+      - name: Build Mac Intel (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: npm run dist:no-license:mac
+        run: cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --x64
 
-      - name: Upload Mac artifacts
+      - name: Upload Mac Intel artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mac-build-no-license
+          name: mac-intel-build-no-license
           path: release/*.dmg
           retention-days: 30
 
-      - name: Upload Mac ZIP artifacts
+      - name: Upload Mac Intel ZIP artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mac-build-no-license-zip
+          name: mac-intel-zip-no-license
+          path: release/*-mac.zip
+          retention-days: 30
+
+  build-mac-m1:
+    name: Build Mac M芯片 (No License)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Mac M芯片 (No License)
+        env:
+          DISABLE_LICENSE_CHECK: 'true'
+        run: cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --arm64
+
+      - name: Upload Mac M芯片 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-m1-build-no-license
+          path: release/*.dmg
+          retention-days: 30
+
+      - name: Upload Mac M芯片 ZIP artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-m1-zip-no-license
           path: release/*-mac.zip
           retention-days: 30
 
@@ -76,33 +107,38 @@ jobs:
           path: release/*.exe
           retention-days: 30
 
-      - name: Upload Windows portable artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: win-build-no-license-portable
-          path: release/*.exe
-          retention-days: 30
-
   create-release:
     name: Create Release
-    needs: [build-mac, build-windows]
+    needs: [build-mac-intel, build-mac-m1, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Mac artifacts
+      - name: Download Mac Intel artifacts
         uses: actions/download-artifact@v4
         with:
-          name: mac-build-no-license
-          path: artifacts/mac
+          name: mac-intel-build-no-license
+          path: artifacts/mac-intel
 
-      - name: Download Mac ZIP artifacts
+      - name: Download Mac Intel ZIP artifacts
         uses: actions/download-artifact@v4
         with:
-          name: mac-build-no-license-zip
-          path: artifacts/mac-zip
+          name: mac-intel-zip-no-license
+          path: artifacts/mac-intel-zip
+
+      - name: Download Mac M芯片 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-m1-build-no-license
+          path: artifacts/mac-m1
+
+      - name: Download Mac M芯片 ZIP artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-m1-zip-no-license
+          path: artifacts/mac-m1-zip
 
       - name: Download Windows artifacts
         uses: actions/download-artifact@v4
@@ -114,8 +150,10 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            artifacts/mac/*.dmg
-            artifacts/mac-zip/*.zip
+            artifacts/mac-intel/*.dmg
+            artifacts/mac-intel-zip/*.zip
+            artifacts/mac-m1/*.dmg
+            artifacts/mac-m1-zip/*.zip
             artifacts/win/*.exe
           draft: false
           prerelease: false
