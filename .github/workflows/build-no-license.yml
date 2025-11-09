@@ -26,7 +26,7 @@ jobs:
       - name: Build Mac Intel (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --x64
+        run: npx cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --x64
 
       - name: Upload Mac Intel artifacts
         uses: actions/upload-artifact@v4
@@ -61,7 +61,7 @@ jobs:
       - name: Build Mac M芯片 (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --arm64
+        run: npx cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --arm64
 
       - name: Upload Mac M芯片 artifacts
         uses: actions/upload-artifact@v4
@@ -96,7 +96,7 @@ jobs:
       - name: Build Windows (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --win
+        run: npx cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --win
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
