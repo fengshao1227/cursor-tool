@@ -15,7 +15,7 @@
 - ✅ MCP 配置继续生效
 - ✅ 认证信息正确隔离
 
-详情请查看 [修复说明](FIX_SESSION_LOSS.md) 和 [更新日志](CHANGELOG.md)。
+详情请查看 [更新日志](CHANGELOG.md)。
 
 ## ✨ 核心功能
 
@@ -96,18 +96,56 @@ npm run diagnose  # 自动检查构建环境和依赖
 ```
 
 **使用 GitHub Actions 自动构建**：
-- ✅ 已配置自动构建工作流（`.github/workflows/build-all.yml`）
-- ✅ 推送到 `main` 分支时自动触发构建
-- ✅ 支持手动触发，可选择有验证/无验证版本
-- ✅ 创建版本标签（如 `v1.0.4`）时自动发布 Release
-- ✅ 构建完成后在 Actions 标签页下载构建产物
 
-**使用方法：**
-1. 推送代码：`git push origin main`（自动触发）
-2. 或手动触发：GitHub → Actions → Build All Platforms → Run workflow
-3. 下载构建产物：Actions 页面 → 最新运行 → Artifacts
+已配置 GitHub Actions 工作流，支持自动构建 Windows 和 Mac 版本。
 
-详细说明请查看：[GitHub Actions构建说明.md](GitHub Actions构建说明.md)
+**触发方式：**
+1. **自动触发**：推送到 `main` 分支时自动构建
+   ```bash
+   git push origin main
+   ```
+2. **手动触发**（推荐）：
+   - 打开 GitHub 仓库 → Actions 标签页
+   - 选择 **Build All Platforms** 工作流
+   - 点击 **Run workflow**，选择分支和选项：
+     - ✅ 勾选 "Build without license check" = 打包无验证版本
+     - ❌ 不勾选 = 打包有验证版本（默认）
+3. **版本发布**：创建版本标签时自动构建并发布 Release
+   ```bash
+   git tag v1.0.4
+   git push origin v1.0.4
+   ```
+
+**下载构建产物：**
+- 进入 **Actions** 标签页 → 最新工作流运行 → **Artifacts** 部分
+- `mac-build-{编号}` - Mac 版本（.dmg, .zip）
+- `win-build-{编号}` - Windows 版本（.exe）
+
+**构建时间：** Mac ~5-10分钟，Windows ~5-10分钟，总计 ~10-20分钟（并行构建）
+
+**验证开关功能：**
+
+可以通过环境变量 `DISABLE_LICENSE_CHECK` 控制是否需要验证：
+
+**打包无验证版本：**
+```bash
+npm run dist:no-license:win    # Windows
+npm run dist:no-license:mac    # Mac
+npm run dist:no-license        # 所有平台
+```
+
+**打包有验证版本（默认）：**
+```bash
+npm run dist:win    # Windows
+npm run dist:mac    # Mac
+npm run dist        # 所有平台
+```
+
+**工作原理：**
+- 环境变量：`DISABLE_LICENSE_CHECK=true` 或 `1` 时禁用验证
+- 代码位置：`src/main/license-service.ts`
+- 禁用验证时：无需激活卡密，直接使用所有功能
+- 启用验证时（默认）：需要激活卡密才能使用
 
 **常见问题**：
 - 应用无法启动：必须在 Windows 上重新 `npm install` 和构建
@@ -149,7 +187,35 @@ sqlite3 "%APPDATA%\Cursor\User\globalStorage\state.vscdb" \
 3. 工具会自动关闭Cursor并注入新的Token
 4. 根据设置自动重启Cursor或手动启动
 
-### 3. 重置机器码
+### 3. 独占卡密功能
+
+独占卡密功能让每个卡密都绑定一个独立的 Cursor Token，实现一卡密一账号的自动注入登录。
+
+**使用流程：**
+
+**首次使用：**
+1. 软件启动时如果没有卡密会弹出卡密输入框
+2. 输入你的卡密
+3. 点击"激活并注入账号"
+4. 等待激活成功
+5. 启动 Cursor，会自动登录到对应账号
+
+**更换卡密：**
+1. 在侧边栏底部点击黄色的 **🔑 更换卡密** 按钮
+2. 如果 Cursor 正在运行，会提示关闭
+3. 输入新的卡密
+4. 点击"激活并注入账号"
+5. 启动 Cursor，自动登录到新账号
+
+**解绑设备：**
+- 在更换卡密界面点击"解绑此设备"可以解绑当前设备
+
+**注意事项：**
+- 注入账号信息需要修改 Cursor 的数据库文件，必须在 Cursor 关闭时才能安全操作
+- 更换卡密后，软件会自动切换到新卡密对应的账号
+- 卡密过期后软件会提示需要重新输入卡密
+
+### 4. 重置机器码
 
 当频繁切换账号导致被限制时：
 1. 点击"重置机器码"按钮
@@ -158,7 +224,7 @@ sqlite3 "%APPDATA%\Cursor\User\globalStorage\state.vscdb" \
 
 ⚠️ **注意**: 重置机器码会清除当前登录状态，需要重新登录
 
-### 4. 深度重置（跨平台）
+### 5. 深度重置（跨平台）
 
 执行更彻底的系统级重置：
 1. 点击"🔥🔥 深度重置 🔥🔥"按钮
@@ -170,17 +236,34 @@ sqlite3 "%APPDATA%\Cursor\User\globalStorage\state.vscdb" \
    - 修改Cursor程序文件
    - 移除并重新签名应用
 
-**Windows 系统：**
+**Windows 系统（8个步骤）：**
    - 修改注册表 MachineGuid（需要管理员权限）
+   - 修改系统标识符（ProductId、InstallDate）
    - 清除DNS缓存
    - 清除网络缓存（ARP、NetBIOS）
-   - 修改Cursor程序文件
+   - 处理MAC地址信息
+   - 清除Windows事件日志
+   - 清除Windows缓存和临时文件
+   - 修改Cursor程序文件（增强版，8种匹配模式）
 
 ⚠️ **重要提示**:
 - Windows需要以**管理员身份**运行才能完整执行深度重置
 - Mac上首次启动修改后的Cursor可能需要在"系统偏好设置→安全性"中允许
 - Windows上首次运行可能触发SmartScreen警告，点击"更多信息"→"仍要运行"即可
 - 建议深度重置后重启计算机
+
+**安全性说明：**
+- ✅ 所有高风险操作都有自动备份机制（程序文件、配置文件、数据库）
+- ✅ 所有操作都有错误处理，失败不会影响其他操作
+- ✅ 提供恢复功能，可以随时恢复备份
+- ✅ 不会影响系统核心功能
+- ✅ 不会丢失用户数据（重要数据有备份）
+- ⚠️ 修改程序文件后，Cursor首次运行可能触发SmartScreen警告（正常现象）
+- ⚠️ 修改注册表MachineGuid可能影响其他依赖该标识的软件（通常影响很小）
+
+**重置内容：**
+- 同时更新 `storage.json` 和 `state.vscdb` 数据库中的机器ID
+- 更新所有相关字段：`telemetry.machineId`、`telemetry.macMachineId`、`telemetry.devDeviceId`、`telemetry.sqmId`、`storage.serviceMachineId`
 
 ## 🔒 安全说明
 
