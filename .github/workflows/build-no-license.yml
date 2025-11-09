@@ -54,7 +54,7 @@ jobs:
         run: |
           echo "Building with DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
           npm run build
-          npx electron-builder --mac --x64
+          ./node_modules/.bin/electron-builder --mac --x64
 
       - name: Upload Mac Intel DMG to Release
         uses: softprops/action-gh-release@v1
@@ -97,7 +97,7 @@ jobs:
         run: |
           echo "Building with DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
           npm run build
-          npx electron-builder --mac --arm64
+          ./node_modules/.bin/electron-builder --mac --arm64
 
       - name: Upload Mac M芯片 DMG to Release
         uses: softprops/action-gh-release@v1
@@ -137,10 +137,11 @@ jobs:
         run: echo "DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
       
       - name: Build Windows (No License)
+        shell: powershell
         run: |
-          echo "Building with DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+          Write-Host "Building with DISABLE_LICENSE_CHECK=$env:DISABLE_LICENSE_CHECK"
           npm run build
-          npx electron-builder --win
+          .\node_modules\.bin\electron-builder.cmd --win
 
       - name: Upload Windows to Release
         uses: softprops/action-gh-release@v1
