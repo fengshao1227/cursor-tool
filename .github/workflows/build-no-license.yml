@@ -48,7 +48,7 @@ jobs:
       - name: Build Mac Intel (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: npm run build && electron-builder --mac --x64
+        run: npm run build && npx electron-builder --mac --x64
 
       - name: Upload Mac Intel DMG to Release
         uses: softprops/action-gh-release@v1
@@ -85,7 +85,7 @@ jobs:
       - name: Build Mac M芯片 (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: npm run build && electron-builder --mac --arm64
+        run: npm run build && npx electron-builder --mac --arm64
 
       - name: Upload Mac M芯片 DMG to Release
         uses: softprops/action-gh-release@v1
@@ -122,7 +122,7 @@ jobs:
       - name: Build Windows (No License)
         env:
           DISABLE_LICENSE_CHECK: 'true'
-        run: npm run build && electron-builder --win
+        run: npm run build && npx electron-builder --win
 
       - name: Upload Windows to Release
         uses: softprops/action-gh-release@v1
