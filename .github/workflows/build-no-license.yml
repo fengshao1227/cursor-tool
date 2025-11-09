@@ -32,6 +32,8 @@ jobs:
     runs-on: macos-14
     needs: create-release
     if: startsWith(github.ref, 'refs/tags/')
+    env:
+      DISABLE_LICENSE_CHECK: 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,10 +47,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify environment variable
+        run: echo "DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+      
       - name: Build Mac Intel (No License)
-        env:
-          DISABLE_LICENSE_CHECK: 'true'
-        run: npm run build && npx electron-builder --mac --x64
+        run: |
+          echo "Building with DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+          npm run build
+          npx electron-builder --mac --x64
 
       - name: Upload Mac Intel DMG to Release
         uses: softprops/action-gh-release@v1
@@ -69,6 +75,8 @@ jobs:
     runs-on: macos-14
     needs: create-release
     if: startsWith(github.ref, 'refs/tags/')
+    env:
+      DISABLE_LICENSE_CHECK: 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -82,10 +90,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify environment variable
+        run: echo "DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+      
       - name: Build Mac M芯片 (No License)
-        env:
-          DISABLE_LICENSE_CHECK: 'true'
-        run: npm run build && npx electron-builder --mac --arm64
+        run: |
+          echo "Building with DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+          npm run build
+          npx electron-builder --mac --arm64
 
       - name: Upload Mac M芯片 DMG to Release
         uses: softprops/action-gh-release@v1
@@ -106,6 +118,8 @@ jobs:
     runs-on: windows-latest
     needs: create-release
     if: startsWith(github.ref, 'refs/tags/')
+    env:
+      DISABLE_LICENSE_CHECK: 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -119,10 +133,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Verify environment variable
+        run: echo "DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+      
       - name: Build Windows (No License)
-        env:
-          DISABLE_LICENSE_CHECK: 'true'
-        run: npm run build && npx electron-builder --win
+        run: |
+          echo "Building with DISABLE_LICENSE_CHECK=$DISABLE_LICENSE_CHECK"
+          npm run build
+          npx electron-builder --win
 
       - name: Upload Windows to Release
         uses: softprops/action-gh-release@v1
