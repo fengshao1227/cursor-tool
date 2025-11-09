@@ -7,9 +7,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    outputs:
+      release_id: ${{ steps.create-release.outputs.id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create-release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-mac-intel:
     name: Build Mac Intel (No License)
     runs-on: macos-14
+    needs: create-release
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,23 +50,25 @@ jobs:
           DISABLE_LICENSE_CHECK: 'true'
         run: npx cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --x64
 
-      - name: Upload Mac Intel artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Mac Intel DMG to Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: mac-intel-build-no-license
-          path: release/*.dmg
-          retention-days: 30
+          files: release/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Mac Intel ZIP artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Mac Intel ZIP to Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: mac-intel-zip-no-license
-          path: release/*-mac.zip
-          retention-days: 30
+          files: release/*-mac.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-mac-m1:
     name: Build Mac M芯片 (No License)
     runs-on: macos-14
+    needs: create-release
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -63,23 +87,25 @@ jobs:
           DISABLE_LICENSE_CHECK: 'true'
         run: npx cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --mac --arm64
 
-      - name: Upload Mac M芯片 artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Mac M芯片 DMG to Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: mac-m1-build-no-license
-          path: release/*.dmg
-          retention-days: 30
+          files: release/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Mac M芯片 ZIP artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Mac M芯片 ZIP to Release
+        uses: softprops/action-gh-release@v1
         with:
-          name: mac-m1-zip-no-license
-          path: release/*-mac.zip
-          retention-days: 30
+          files: release/*-mac.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-windows:
     name: Build Windows (No License)
     runs-on: windows-latest
+    needs: create-release
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,63 +124,10 @@ jobs:
           DISABLE_LICENSE_CHECK: 'true'
         run: npx cross-env DISABLE_LICENSE_CHECK=true npm run build && electron-builder --win
 
-      - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: win-build-no-license
-          path: release/*.exe
-          retention-days: 30
-
-  create-release:
-    name: Create Release
-    needs: [build-mac-intel, build-mac-m1, build-windows]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download Mac Intel artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: mac-intel-build-no-license
-          path: artifacts/mac-intel
-
-      - name: Download Mac Intel ZIP artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: mac-intel-zip-no-license
-          path: artifacts/mac-intel-zip
-
-      - name: Download Mac M芯片 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: mac-m1-build-no-license
-          path: artifacts/mac-m1
-
-      - name: Download Mac M芯片 ZIP artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: mac-m1-zip-no-license
-          path: artifacts/mac-m1-zip
-
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: win-build-no-license
-          path: artifacts/win
-
-      - name: Create Release
+      - name: Upload Windows to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/mac-intel/*.dmg
-            artifacts/mac-intel-zip/*.zip
-            artifacts/mac-m1/*.dmg
-            artifacts/mac-m1-zip/*.zip
-            artifacts/win/*.exe
-          draft: false
-          prerelease: false
+          files: release/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
